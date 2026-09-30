@@ -1,0 +1,9 @@
+.dashboard-body .welcome-section {
+  margin-bottom: 2px;
+}
+
+@media (max-width: 700px) {
+  .dashboard-body .main-grid-layout {
+    margin-left: 0;
+  }
+}

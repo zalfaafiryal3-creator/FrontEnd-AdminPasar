@@ -1,0 +1,11 @@
+.promo-management .promo-table th:first-child,
+.promo-management .promo-table td:first-child { width: 32%; text-align: left; }
+.promo-management .promo-table th:nth-child(2) { width: 16%; }
+.promo-management .promo-table th:nth-child(3) { width: 14%; }
+.promo-management .promo-table th:nth-child(4) { width: 13%; }
+.promo-management .promo-table th:nth-child(5) { width: 25%; }
+
+@media (max-width: 700px) {
+  .promo-management .table-shell { overflow-x: auto; }
+  .promo-management .promo-table { min-width: 640px; }
+}

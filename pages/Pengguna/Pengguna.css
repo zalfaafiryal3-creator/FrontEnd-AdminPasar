@@ -1,0 +1,11 @@
+.user-management .user-table th:first-child,
+.user-management .user-table td:first-child { width: 25%; text-align: left; }
+.user-management .user-table th:nth-child(2) { width: 21%; }
+.user-management .user-table th:nth-child(3) { width: 17%; }
+.user-management .user-table th:nth-child(4) { width: 16%; }
+.user-management .user-table th:nth-child(5) { width: 21%; }
+
+@media (max-width: 700px) {
+  .user-management .table-shell { overflow-x: auto; }
+  .user-management .user-table { min-width: 580px; }
+}

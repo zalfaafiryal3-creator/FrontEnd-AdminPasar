@@ -1,0 +1,11 @@
+.store-management .store-table th:first-child,
+.store-management .store-table td:first-child { width: 39%; text-align: left; }
+.store-management .store-table th:nth-child(2) { width: 16%; }
+.store-management .store-table th:nth-child(3) { width: 14%; }
+.store-management .store-table th:nth-child(4) { width: 12%; }
+.store-management .store-table th:nth-child(5) { width: 19%; }
+
+@media (max-width: 700px) {
+  .store-management .table-shell { overflow-x: auto; }
+  .store-management .store-table { min-width: 520px; }
+}
