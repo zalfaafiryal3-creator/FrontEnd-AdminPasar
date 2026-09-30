@@ -1,8 +1,20 @@
-.dashboard-body .welcome-section {
-  margin-bottom: 2px;
+.dashboard-body {
+  background: transparent;
 }
 
-@media (max-width: 700px) {
+.dashboard-body .welcome-section {
+  margin-bottom: 18px;
+}
+
+.dashboard-body .stat-cards-container {
+  margin-bottom: 24px;
+}
+
+.dashboard-body .main-grid-layout {
+  margin-left: 0;
+}
+
+@media (max-width: 980px) {
   .dashboard-body .main-grid-layout {
     margin-left: 0;
   }

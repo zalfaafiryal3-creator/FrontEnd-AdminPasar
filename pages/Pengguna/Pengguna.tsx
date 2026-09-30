@@ -1,5 +1,5 @@
-import AdminLayout from "../../components/AdminLayout.tsx";
-import ManagementTable, { type ManagementTableConfig } from "../../components/ManagementTable.tsx";
+import AdminLayout from "../../components/AdminLayout";
+import ManagementTable, { type ManagementTableConfig } from "../../components/ManagementTable";
 import "./Pengguna.css";
 
 const config: ManagementTableConfig = {

@@ -1,4 +1,4 @@
-import AdminLayout from "../../components/AdminLayout.tsx";
+import AdminLayout from "../../components/AdminLayout";
 import "./Penjual.css";
 
 const sellers = ["Budi Santoso (Lumpur Kentang)", "Budi Santoso (Lumpur Kentang)", "Budi Santoso (Lumpur Kentang)", "Budi Santoso (Lumpur Kentang)"];

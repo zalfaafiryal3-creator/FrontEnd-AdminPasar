@@ -1,0 +1,1 @@
+{"root":["./vite-env.d.ts","./app.tsx","./main.tsx","./components/adminlayout.tsx","./components/managementtable.tsx","./pages/dashboard/dashboard.tsx","./pages/kategori/kategori.tsx","./pages/kelolapromo/kelolapromo.tsx","./pages/kelolatoko/kelolatoko.tsx","./pages/pengaturan/pengaturan.tsx","./pages/pengguna/pengguna.tsx","./pages/penjual/penjual.tsx"],"version":"5.9.3"}

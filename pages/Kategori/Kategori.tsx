@@ -1,5 +1,5 @@
 import { useRef, useState, type FormEvent } from "react";
-import AdminLayout from "../../components/AdminLayout.tsx";
+import AdminLayout from "../../components/AdminLayout";
 import "./Kategori.css";
 
 type Menu = {

@@ -1,12 +1,12 @@
 import { Link, Route, Routes } from "react-router-dom";
-import Dashboard from "./pages/Dashboard/Dashboard.tsx";
-import KelolaToko from "./pages/KelolaToko/KelolaToko.tsx";
-import Kategori from "./pages/Kategori/Kategori.tsx";
-import KelolaPromo from "./pages/KelolaPromo/KelolaPromo.tsx";
-import Pengguna from "./pages/Pengguna/Pengguna.tsx";
-import Penjual from "./pages/Penjual/Penjual.tsx";
-import Pengaturan from "./pages/Pengaturan/Pengaturan.tsx";
-import AdminLayout from "./components/AdminLayout.tsx";
+import Dashboard from "./pages/Dashboard/Dashboard";
+import KelolaToko from "./pages/KelolaToko/KelolaToko";
+import Kategori from "./pages/Kategori/Kategori";
+import KelolaPromo from "./pages/KelolaPromo/KelolaPromo";
+import Pengguna from "./pages/Pengguna/Pengguna";
+import Penjual from "./pages/Penjual/Penjual";
+import Pengaturan from "./pages/Pengaturan/Pengaturan";
+import AdminLayout from "./components/AdminLayout";
 import "./App.css";
 
 function NotFound() {

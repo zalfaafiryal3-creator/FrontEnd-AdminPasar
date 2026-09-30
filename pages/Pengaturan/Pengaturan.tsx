@@ -1,4 +1,4 @@
-import AdminLayout from "../../components/AdminLayout.tsx";
+import AdminLayout from "../../components/AdminLayout";
 import "./Pengaturan.css";
 
 export default function Pengaturan() {

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import AdminLayout from "../../components/AdminLayout.tsx";
+import AdminLayout from "../../components/AdminLayout";
 import "./Dashboard.css";
 
 export default function Dashboard() {
