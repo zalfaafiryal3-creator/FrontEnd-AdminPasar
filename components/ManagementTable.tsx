@@ -32,6 +32,7 @@ export type ManagementTableConfig = {
   storageKey: string;
   deletedStorageKey?: string;
   selectable?: boolean;
+  deleteLabel?: string;
   columns: string[];
   initialRecords: RecordEntry[];
   fields: (SelectField | InputField)[];
@@ -84,7 +85,10 @@ export default function ManagementTable({ config }: ManagementTableProps) {
   }
 
   function deleteSelected() {
-    if (!selectedIds.size || !window.confirm(`Hapus ${selectedIds.size} promo yang dipilih?`)) return;
+    if (!selectedIds.size) return;
+
+    const subjectLabel = (config.deleteLabel || "Promo").toLowerCase();
+    if (!window.confirm(`Hapus ${selectedIds.size} ${subjectLabel} yang dipilih?`)) return;
 
     if (!config.deletedStorageKey) return;
     const deletedIds = new Set(readStorage<string>(config.deletedStorageKey));
@@ -122,7 +126,7 @@ export default function ManagementTable({ config }: ManagementTableProps) {
           </tbody>
         </table>
       </div>
-      {config.selectable && <div className="promo-actions"><span className="selected-promo-count" aria-live="polite">{selectedIds.size ? `${selectedIds.size} dipilih` : ""}</span><button className="delete-promos-button" type="button" disabled={!selectedIds.size} onClick={deleteSelected}><i className="fa-solid fa-trash-can" /> Hapus Promo</button></div>}
+      {config.selectable && <div className="promo-actions"><span className="selected-promo-count" aria-live="polite">{selectedIds.size ? `${selectedIds.size} dipilih` : ""}</span><button className="delete-promos-button" type="button" disabled={!selectedIds.size} onClick={deleteSelected}><i className="fa-solid fa-trash-can" /> {config.deleteLabel || "Hapus Promo"}</button></div>}
       <dialog className="create-dialog" ref={dialogRef}>
         <form className="create-form" onSubmit={addRecord}>
           <h2>{config.addLabel}</h2>

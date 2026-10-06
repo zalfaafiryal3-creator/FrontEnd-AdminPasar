@@ -11,6 +11,9 @@ const config: ManagementTableConfig = {
   searchPlaceholder: "Cari toko, atau nama pemilik...",
   searchLabel: "Cari pengguna",
   storageKey: "pasar-admin-users",
+  deletedStorageKey: "pasar-admin-deleted-users",
+  selectable: true,
+  deleteLabel: "Hapus Pengguna",
   columns: ["PENGGUNA", "EMAIL", "NO WHATSAPP", "STATUS AKUN", "AKSI"],
   initialRecords: [{ id: "user-default-mifta-annisa", name: "Mifta Annisa", email: "miftannisa@gmail.com", phone: "+62 812-3456-7890", status: "Aktif" }],
   fields: [

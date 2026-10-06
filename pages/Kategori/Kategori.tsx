@@ -120,7 +120,7 @@ export default function Kategori() {
             ))}
             {!Object.keys(groupedMenus).length && <p className="category-empty">Kategori tidak ditemukan.</p>}
           </div>
-          <div className="category-actions"><span className="selected-menu-count" aria-live="polite">{selectedIds.size ? `${selectedIds.size} dipilih` : ""}</span><button className="delete-menu-button" type="button" disabled={!selectedIds.size} onClick={deleteSelected}><i className="fa-solid fa-trash-can"/> Hapus Menu</button></div>
+          <div className="category-actions"><span className="selected-menu-count" aria-live="polite">{selectedIds.size ? `${selectedIds.size} dipilih` : ""}</span><button className="delete-menu-button" type="button" disabled={!selectedIds.size} onClick={deleteSelected}><i className="fa-solid fa-trash-can"/> Hapus Toko</button></div>
         </main>
       <dialog className="create-dialog" ref={dialogRef}>
         <form className="create-form" onSubmit={addMenu}>

@@ -1,0 +1,253 @@
+.login-page {
+  display: grid;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 28px 16px;
+  place-items: center;
+  overflow-x: hidden;
+  background: #fff;
+  color: #594045;
+}
+
+.login-card {
+  width: min(100%, 364px);
+  padding: 24px;
+  border: 1px solid rgba(194, 220, 128, 0.18);
+  border-radius: 22px;
+  background: #f0f7df;
+  box-shadow: 0 12px 28px rgba(75, 101, 21, 0.12);
+}
+
+.login-brand {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  text-align: center;
+}
+
+.login-badge {
+  display: inline-flex;
+  min-height: 16px;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 11px;
+  border-radius: 999px;
+  background: #d6ed91;
+  color: #4b6515;
+  font-size: 8px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.login-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4b6515;
+}
+
+.login-brand h1 {
+  margin: 5px 0 0;
+  color: #34490f;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.login-location {
+  margin: 3px 0 0;
+  color: #6f6d72;
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.login-welcome {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin-top: 12px;
+  padding: 14px 11px;
+  border-radius: 13px;
+  background: #d9eaae;
+}
+
+.welcome-icon {
+  display: grid;
+  width: 25px;
+  height: 25px;
+  flex: 0 0 25px;
+  place-items: center;
+  margin-top: 1px;
+  border-radius: 8px;
+  background: #fbbf24;
+  color: #fff;
+  font-size: 12px;
+}
+
+.welcome-copy h2 {
+  margin: 0 0 3px;
+  color: #f4a900;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.welcome-copy p {
+  max-width: 240px;
+  margin: 0;
+  color: #42383b;
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.login-form {
+  display: grid;
+  gap: 11px;
+  margin-top: 15px;
+}
+
+.login-field {
+  min-width: 0;
+}
+
+.login-field label,
+.login-password-heading label {
+  display: block;
+  color: #30262a;
+  font-size: 9px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.login-input-wrap {
+  display: flex;
+  height: 34px;
+  align-items: center;
+  gap: 9px;
+  margin-top: 5px;
+  padding: 0 11px;
+  border: 1px solid rgba(75, 101, 21, 0.07);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(75, 101, 21, 0.04);
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.login-input-wrap:focus-within {
+  border-color: #8cae4e;
+  box-shadow: 0 0 0 3px rgba(194, 220, 128, 0.28);
+}
+
+.login-input-icon {
+  flex: 0 0 auto;
+  color: #777d6c;
+  font-size: 11px;
+}
+
+.login-input-wrap input {
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #42383b;
+  font: inherit;
+  font-size: 10px;
+}
+
+.login-input-wrap input::placeholder {
+  color: #766a6e;
+  opacity: 1;
+}
+
+.login-password-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.forgot-password {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #4b6515;
+  cursor: pointer;
+  font: inherit;
+  font-size: 8px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.forgot-password:hover {
+  color: #34490f;
+}
+
+.password-toggle {
+  display: grid;
+  width: 22px;
+  height: 26px;
+  flex: 0 0 22px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #777d6c;
+  cursor: pointer;
+}
+
+.password-toggle:hover {
+  color: #4b6515;
+}
+
+.forgot-message {
+  margin: 5px 0 0;
+  color: #4b6515;
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.login-submit {
+  display: flex;
+  width: 100%;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin-top: -1px;
+  border: 0;
+  border-radius: 10px;
+  background: #fbbf24;
+  box-shadow: 0 5px 10px rgba(182, 135, 16, 0.22);
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 500;
+  transition: background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.login-submit:hover {
+  transform: translateY(-1px);
+  background: #f4b313;
+  box-shadow: 0 7px 14px rgba(182, 135, 16, 0.28);
+}
+
+.login-submit:focus-visible,
+.forgot-password:focus-visible,
+.password-toggle:focus-visible {
+  outline: 2px solid #4b6515;
+  outline-offset: 3px;
+}
+
+@media (max-width: 420px) {
+  .login-page {
+    padding: 20px 14px;
+  }
+
+  .login-card {
+    padding: 22px 20px;
+  }
+}

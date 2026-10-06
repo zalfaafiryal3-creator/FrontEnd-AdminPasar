@@ -6,6 +6,7 @@ import KelolaPromo from "./pages/KelolaPromo/KelolaPromo";
 import Pengguna from "./pages/Pengguna/Pengguna";
 import Penjual from "./pages/Penjual/Penjual";
 import Pengaturan from "./pages/Pengaturan/Pengaturan";
+import Login from "./pages/login/Login";
 import AdminLayout from "./components/AdminLayout";
 import "./App.css";
 
@@ -24,6 +25,7 @@ function NotFound() {
 export default function App() {
   return (
     <Routes>
+      <Route path="/login" element={<Login />} />
       <Route path="/" element={<Dashboard />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/kelola-toko" element={<KelolaToko />} />
