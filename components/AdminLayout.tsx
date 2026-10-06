@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
+import { useDemoAuth } from "../auth/DemoAuthContext";
 
 const navigation = [
   { id: "dashboard", label: "Dashboard", icon: "fa-house", path: "/dashboard" },
@@ -18,11 +19,18 @@ type AdminLayoutProps = {
 };
 
 export default function AdminLayout({ activePage, label, children }: AdminLayoutProps) {
+  const navigate = useNavigate();
+  const { currentUser, logout } = useDemoAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     document.title = `${label.replace(/^Admin /, "")} - Pasar Oro-Oro Dowo`;
   }, [label]);
+
+  function handleLogout() {
+    logout();
+    navigate("/login", { replace: true });
+  }
 
   return (
     <div className={`app-container${sidebarCollapsed ? " sidebar-collapsed" : ""}`}>
@@ -30,14 +38,11 @@ export default function AdminLayout({ activePage, label, children }: AdminLayout
       <aside className="sidebar">
         <div className="sidebar-brand">
           <div className="logo-roof-icon">
-            <svg viewBox="0 0 100 60" width="48" height="32" fill="#bc3b5c" aria-hidden="true">
-              <path d="M50 2 L10 20 L15 20 L15 25 L5 30 L95 30 L85 25 L85 20 L90 20 Z" />
-              <rect x="20" y="32" width="60" height="4" />
-              <rect x="10" y="38" width="80" height="5" />
-              <rect x="5" y="45" width="90" height="6" />
-            </svg>
+            <img src="/assets/logo%20pasar%20oro%20oro.png" alt="Pasar Oro-Oro Dowo" />
           </div>
-          <div className="brand-text"><span>Pasar</span><span>Oro-Oro Dowo</span><span className="brand-subtitle">Admin Panel</span></div>
+          <div className="brand-text">
+            <span className="brand-subtitle">Admin Panel</span>
+          </div>
         </div>
         <nav className="sidebar-nav" aria-label="Navigasi utama">
           {navigation.map((item) => (
@@ -55,7 +60,11 @@ export default function AdminLayout({ activePage, label, children }: AdminLayout
           </div>
           <div className="topbar-right">
             <div className="notification-box" aria-label="Notifikasi"><i className="fa-regular fa-bell" /><span className="dot-badge" /></div>
-            <div className="admin-profile"><div className="profile-avatar"><i className="fa-solid fa-user" /></div><div className="profile-meta"><span className="admin-name">Admin</span><span className="admin-role">Super Admin</span></div></div>
+            <div className="admin-profile"><div className="profile-avatar"><i className="fa-solid fa-user" /></div><div className="profile-meta"><span className="admin-name">{currentUser?.username ?? "Admin"}</span><span className="admin-role">Super Admin</span></div></div>
+            <button className="logout-button" type="button" onClick={handleLogout} aria-label="Keluar">
+              <i className="fa-solid fa-right-from-bracket" aria-hidden="true" />
+              <span>Keluar</span>
+            </button>
           </div>
         </header>
         {children}

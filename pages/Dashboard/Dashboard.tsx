@@ -1,12 +1,15 @@
 import { Link } from "react-router-dom";
+import { useDemoAuth } from "../../auth/DemoAuthContext";
 import AdminLayout from "../../components/AdminLayout";
 import "./Dashboard.css";
 
 export default function Dashboard() {
+  const { currentUser } = useDemoAuth();
+
   return (
     <AdminLayout activePage="dashboard" label="Admin Dashboard">
       <main className="dashboard-body page-view active">
-        <section className="welcome-section"><h1>Selamat Datang, Admin 👋</h1><p>Berikut ringkasan aktivitas pasar Oro-Oro Dowo hari ini.</p></section>
+        <section className="welcome-section"><h1>Selamat Datang, {currentUser?.username ?? "Admin"} 👋</h1><p>Berikut ringkasan aktivitas pasar Oro-Oro Dowo hari ini.</p></section>
         <section className="stat-cards-container">
           <Link className="stat-card" to="/kelola-toko" aria-label="Buka halaman Total Toko"><div className="stat-content"><span className="stat-label">TOTAL TOKO</span><span className="stat-number">78</span></div><div className="stat-circle-icon"><i className="fa-solid fa-basket-shopping" /></div></Link>
           <Link className="stat-card" to="/kelola-promo" aria-label="Buka halaman Kelola Promo"><div className="stat-content"><span className="stat-label">KELOLA PROMO</span><span className="stat-number">10</span></div><div className="stat-circle-icon"><i className="fa-solid fa-fire" /></div></Link>
@@ -25,14 +28,10 @@ export default function Dashboard() {
             </div></section>
           </div>
           <section className="grid-col-right"><div className="activity-panel"><div className="activity-header"><h2>Riwayat Aktivitas Terbaru</h2><a href="#aktivitas" className="see-all-link">Lihat Semua</a></div><div className="activity-list" id="aktivitas">
-            <div className="activity-row"><div className="user-avatar pink"><i className="fa-solid fa-user" /></div><div className="activity-details"><div className="activity-text"><strong>Mifta Annisa</strong> <span className="sub-act">berhasil login</span></div><div className="activity-sub">IP:182.1.22.90 &bull; 2 menit lalu</div></div><span className="status-badge success">Success</span></div>
-            <div className="activity-row"><div className="user-avatar brown"><i className="fa-solid fa-user" /></div><div className="activity-details"><div className="activity-text"><strong>Serli Maharani</strong> <span className="sub-act">gagal login</span></div><div className="activity-sub">IP:182.1.22.90 &bull; 2 menit lalu</div></div><span className="status-badge failed">GAGAL</span></div>
-            <div className="activity-row"><div className="user-avatar yellow"><i className="fa-solid fa-user" /></div><div className="activity-details"><div className="activity-text"><strong>Firyal Zalfa</strong> <span className="sub-act">berhasil login</span></div><div className="activity-sub">IP:182.1.22.90 &bull; 2 menit lalu</div></div><span className="status-badge success">Success</span></div>
-            <div className="activity-row"><div className="user-avatar green"><i className="fa-solid fa-user" /></div><div className="activity-details"><div className="activity-text"><strong>Mifta Annisa</strong> <span className="sub-act">berhasil login</span></div><div className="activity-sub">IP:182.1.22.90 &bull; 2 menit lalu</div></div><span className="status-badge success">Success</span></div>
+            <p className="activity-unavailable">Riwayat aktivitas tersedia setelah backend autentikasi terhubung.</p>
           </div></div></section>
         </div>
       </main>
     </AdminLayout>
   );
 }
-

@@ -1,4 +1,4 @@
-import { Link, Route, Routes } from "react-router-dom";
+import { Link, Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import KelolaToko from "./pages/KelolaToko/KelolaToko";
 import Kategori from "./pages/Kategori/Kategori";
@@ -7,8 +7,19 @@ import Pengguna from "./pages/Pengguna/Pengguna";
 import Penjual from "./pages/Penjual/Penjual";
 import Pengaturan from "./pages/Pengaturan/Pengaturan";
 import Login from "./pages/login/Login";
+import Register from "./pages/register/Register";
 import AdminLayout from "./components/AdminLayout";
+import { DemoAuthProvider, useDemoAuth } from "./auth/DemoAuthContext";
 import "./App.css";
+
+function RequireAuth() {
+  const { currentUser } = useDemoAuth();
+  const location = useLocation();
+
+  return currentUser
+    ? <Outlet />
+    : <Navigate to="/login" replace state={{ from: location }} />;
+}
 
 function NotFound() {
   return (
@@ -24,17 +35,22 @@ function NotFound() {
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/" element={<Dashboard />} />
-      <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/kelola-toko" element={<KelolaToko />} />
-      <Route path="/kategori" element={<Kategori />} />
-      <Route path="/kelola-promo" element={<KelolaPromo />} />
-      <Route path="/pengguna" element={<Pengguna />} />
-      <Route path="/penjual" element={<Penjual />} />
-      <Route path="/pengaturan" element={<Pengaturan />} />
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+    <DemoAuthProvider>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route element={<RequireAuth />}>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/kelola-toko" element={<KelolaToko />} />
+          <Route path="/kategori" element={<Kategori />} />
+          <Route path="/kelola-promo" element={<KelolaPromo />} />
+          <Route path="/pengguna" element={<Pengguna />} />
+          <Route path="/penjual" element={<Penjual />} />
+          <Route path="/pengaturan" element={<Pengaturan />} />
+          <Route path="*" element={<NotFound />} />
+        </Route>
+      </Routes>
+    </DemoAuthProvider>
   );
 }

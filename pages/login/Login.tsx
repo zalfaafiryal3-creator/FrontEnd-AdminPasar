@@ -1,21 +1,48 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useDemoAuth } from "../../auth/DemoAuthContext";
 import "./Login.css";
 
 export default function Login() {
   const navigate = useNavigate();
-  const [username, setUsername] = useState("");
+  const location = useLocation();
+  const { currentUser, login } = useDemoAuth();
+  const registeredUsername = (location.state as { registeredUsername?: string } | null)?.registeredUsername;
+  const [username, setUsername] = useState(registeredUsername ?? "");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [forgotMessage, setForgotMessage] = useState("");
+  const [authMessage, setAuthMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     document.title = "Login Admin - Pasar Oro-Oro Dowo";
   }, []);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  useEffect(() => {
+    if (currentUser) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [currentUser, navigate]);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    navigate("/dashboard");
+    setAuthMessage("");
+    setIsSubmitting(true);
+
+    try {
+      if (!await login(username, password)) {
+        setAuthMessage("Nama pengguna/email atau kata sandi tidak cocok dengan akun demo yang terdaftar.");
+        return;
+      }
+
+      const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname;
+      navigate(from && from !== "/login" ? from : "/dashboard", { replace: true });
+    } catch {
+      setAuthMessage("Login demo gagal memproses akun. Coba lagi pada tab browser yang sama.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -42,6 +69,15 @@ export default function Login() {
             </p>
           </div>
         </div>
+
+        <p className="auth-demo-notice" role="note">
+          Mode demo: akun hanya tersimpan sementara di tab browser ini. Jangan gunakan kata sandi asli.
+        </p>
+        {registeredUsername && (
+          <p className="login-auth-success" role="status">
+            Akun demo berhasil dibuat. Silakan masuk dengan nama pengguna dan kata sandi yang didaftarkan.
+          </p>
+        )}
 
         <form className="login-form" onSubmit={handleSubmit}>
           <div className="login-field">
@@ -106,10 +142,19 @@ export default function Login() {
             )}
           </div>
 
-          <button className="login-submit" type="submit">
-            Masuk ke Dashboard <span aria-hidden="true">→</span>
+          {authMessage && (
+            <p className="login-auth-message" role="alert">
+              {authMessage}
+            </p>
+          )}
+
+          <button className="login-submit" type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Memeriksa akun..." : "Masuk ke Dashboard"} <span aria-hidden="true">→</span>
           </button>
         </form>
+        <p className="auth-switch-link">
+          Belum punya akun? <Link to="/register">Daftar di sini</Link>
+        </p>
       </section>
     </main>
   );

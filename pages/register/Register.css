@@ -1,0 +1,57 @@
+.register-card {
+  width: min(100%, 364px);
+}
+
+.register-form {
+  gap: 10px;
+  margin-top: 13px;
+}
+
+.register-field-error {
+  margin: 4px 0 0;
+  color: #a33a36;
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.login-input-wrap.has-error {
+  border-color: #c45b56;
+}
+
+.register-status {
+  margin: 0;
+  color: #8c302b;
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.register-login-link {
+  margin: 8px 0 0;
+  color: #594045;
+  font-size: 9px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.register-login-link a {
+  color: #4b6515;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.register-login-link a:hover {
+  color: #34490f;
+}
+
+.register-login-link a:focus-visible {
+  border-radius: 2px;
+  outline: 2px solid #4b6515;
+  outline-offset: 3px;
+}
+
+@media (max-width: 420px) {
+  .register-card {
+    padding: 22px 20px;
+  }
+}

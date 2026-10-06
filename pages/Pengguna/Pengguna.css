@@ -87,7 +87,7 @@ body:has(.user-management) {
   background: #fbbf24;
 }
 
-.user-management {
+.app-container:has(.user-management) .user-management {
   display: flex;
   min-height: calc(100vh - 58px);
   flex-direction: column;

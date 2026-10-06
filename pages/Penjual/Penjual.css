@@ -87,7 +87,7 @@ body:has(.seller-heading) {
   background: #fbbf24;
 }
 
-.management-view:has(.seller-heading) {
+.app-container:has(.seller-heading) .management-view {
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -448,6 +448,7 @@ body:has(.seller-heading) {
   min-height: 34px;
   align-items: center;
   justify-content: center;
+  gap: 6px;
   padding: 8px 18px;
   border: none;
   border-radius: 10px;
@@ -466,8 +467,10 @@ body:has(.seller-heading) {
 }
 
 .app-container:has(.seller-heading) .management-view .delete-sellers-button:disabled {
-  opacity: 0.7;
+  background: #dfe9c2;
+  color: #594045;
   cursor: not-allowed;
+  opacity: 0.8;
 }
 
 .app-container:has(.seller-heading) .management-view .delete-sellers-button:focus-visible {

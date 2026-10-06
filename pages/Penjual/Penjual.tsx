@@ -66,7 +66,7 @@ export default function Penjual() {
             {selectedIds.length ? `${selectedIds.length} dipilih` : ""}
           </span>
           <button className="delete-sellers-button" type="button" onClick={handleDeleteSellers} disabled={!selectedIds.length}>
-            Hapus Penjual
+            <i className="fa-solid fa-trash-can" aria-hidden="true" /> Hapus Penjual
           </button>
         </div>
       </main>

@@ -209,6 +209,27 @@
   line-height: 1.4;
 }
 
+.login-auth-message {
+  margin: 0;
+  color: #8c302b;
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.login-auth-success,
+.auth-demo-notice {
+  margin: 10px 0 0;
+  color: #4b6515;
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.auth-demo-notice {
+  padding: 7px 9px;
+  border-radius: 8px;
+  background: rgba(194, 220, 128, 0.28);
+}
+
 .login-submit {
   display: flex;
   width: 100%;

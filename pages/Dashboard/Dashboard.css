@@ -41,6 +41,13 @@ body:has(.dashboard-body) {
   color: #594045;
 }
 
+.app-container:has(.dashboard-body) .activity-unavailable {
+  margin: 0;
+  color: #74666a;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
 .app-container:has(.dashboard-body) .nav-item {
   color: #594045;
 }

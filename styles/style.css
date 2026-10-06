@@ -58,24 +58,35 @@ a {
 
 .sidebar-brand {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 52px;
-  padding: 4px 4px 14px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  min-height: 0;
+  padding: 4px 0 14px;
   color: var(--pink);
 }
 
 .logo-roof-icon {
-  display: grid;
-  width: 48px;
-  height: 48px;
-  place-items: center;
-  flex: 0 0 48px;
+  width: 100%;
+  height: 36px;
+  overflow: hidden;
+  flex: 0 0 36px;
+}
+
+.logo-roof-icon img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 38%;
 }
 
 .brand-text {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
   font-size: 12px;
   line-height: 1.2;
   font-weight: 700;
@@ -84,7 +95,7 @@ a {
 }
 
 .brand-subtitle {
-  margin-top: 4px;
+  margin-top: 1px;
   color: var(--text-muted);
   font-size: 9px;
   font-weight: 500;
@@ -274,6 +285,32 @@ a {
   font-size: 10px;
   line-height: 1.2;
   color: var(--text-muted);
+}
+
+.logout-button {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid rgba(75, 101, 21, 0.18);
+  border-radius: 9px;
+  color: var(--green-strong);
+  background: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.logout-button:hover {
+  background: var(--green-soft);
+}
+
+.logout-button:focus-visible {
+  outline: 2px solid var(--green-strong);
+  outline-offset: 2px;
 }
 
 .dashboard-body {
@@ -767,6 +804,15 @@ a {
   }
 
   .admin-profile {
+    display: none;
+  }
+
+  .logout-button {
+    width: 32px;
+    padding: 0;
+  }
+
+  .logout-button span {
     display: none;
   }
 
@@ -1606,7 +1652,9 @@ a {
   }
 
   .logo-roof-icon {
-    flex-basis: 37px;
+    width: 46px;
+    height: 12px;
+    flex-basis: 12px;
   }
 
   .brand-text,
@@ -1861,6 +1909,12 @@ a {
   padding: 0;
 }
 
+.sidebar-collapsed .logo-roof-icon {
+  width: 46px;
+  height: 12px;
+  flex-basis: 12px;
+}
+
 .sidebar-collapsed .brand-text,
 .sidebar-collapsed .nav-item span {
   display: none;
@@ -1891,7 +1945,9 @@ a {
   }
 
   .logo-roof-icon {
-    flex-basis: 43px;
+    width: 46px;
+    height: 12px;
+    flex-basis: 12px;
   }
 
   .brand-text,
