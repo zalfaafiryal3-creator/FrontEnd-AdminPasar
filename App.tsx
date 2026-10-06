@@ -7,7 +7,6 @@ import Pengguna from "./pages/Pengguna/Pengguna";
 import Penjual from "./pages/Penjual/Penjual";
 import Pengaturan from "./pages/Pengaturan/Pengaturan";
 import Login from "./pages/login/Login";
-import Register from "./pages/register/Register";
 import AdminLayout from "./components/AdminLayout";
 import { DemoAuthProvider, useDemoAuth } from "./auth/DemoAuthContext";
 import "./App.css";
@@ -38,7 +37,6 @@ export default function App() {
     <DemoAuthProvider>
       <Routes>
         <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
         <Route element={<RequireAuth />}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/dashboard" element={<Dashboard />} />

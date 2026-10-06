@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useDemoAuth } from "../../auth/DemoAuthContext";
 import "./Login.css";
 
@@ -7,8 +7,7 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser, login } = useDemoAuth();
-  const registeredUsername = (location.state as { registeredUsername?: string } | null)?.registeredUsername;
-  const [username, setUsername] = useState(registeredUsername ?? "");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [forgotMessage, setForgotMessage] = useState("");
@@ -32,7 +31,7 @@ export default function Login() {
 
     try {
       if (!await login(username, password)) {
-        setAuthMessage("Nama pengguna/email atau kata sandi tidak cocok dengan akun demo yang terdaftar.");
+        setAuthMessage("Email dan kata sandi wajib diisi.");
         return;
       }
 
@@ -71,24 +70,19 @@ export default function Login() {
         </div>
 
         <p className="auth-demo-notice" role="note">
-          Mode demo: akun hanya tersimpan sementara di tab browser ini. Jangan gunakan kata sandi asli.
+          Mode preview: belum terhubung ke backend. Gunakan email dan kata sandi apa pun untuk masuk.
         </p>
-        {registeredUsername && (
-          <p className="login-auth-success" role="status">
-            Akun demo berhasil dibuat. Silakan masuk dengan nama pengguna dan kata sandi yang didaftarkan.
-          </p>
-        )}
 
         <form className="login-form" onSubmit={handleSubmit}>
           <div className="login-field">
-            <label htmlFor="admin-username">Nama Pengguna / Email Admin</label>
+            <label htmlFor="admin-username">Email Admin</label>
             <div className="login-input-wrap">
               <i className="fa-regular fa-user login-input-icon" aria-hidden="true" />
               <input
                 id="admin-username"
-                type="text"
+                type="email"
                 autoComplete="username"
-                placeholder="admin.utama@pasaroro.id"
+                placeholder="nama@email.com"
                 value={username}
                 onChange={(event) => setUsername(event.target.value)}
                 required
@@ -117,7 +111,7 @@ export default function Login() {
                 id="admin-password"
                 type={showPassword ? "text" : "password"}
                 autoComplete="current-password"
-                placeholder="OroOroDowo#2024"
+                placeholder="Masukkan kata sandi"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 required
@@ -152,9 +146,6 @@ export default function Login() {
             {isSubmitting ? "Memeriksa akun..." : "Masuk ke Dashboard"} <span aria-hidden="true">→</span>
           </button>
         </form>
-        <p className="auth-switch-link">
-          Belum punya akun? <Link to="/register">Daftar di sini</Link>
-        </p>
       </section>
     </main>
   );
