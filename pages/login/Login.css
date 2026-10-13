@@ -5,17 +5,32 @@
   padding: 28px 16px;
   place-items: center;
   overflow-x: hidden;
-  background: #fff;
-  color: #594045;
+  position: relative;
+  isolation: isolate;
+  background:
+    linear-gradient(135deg, rgba(27, 49, 35, 0.4), rgba(44, 63, 51, 0.54)),
+    linear-gradient(135deg, #6e8b72 0%, #718b8d 52%, #8b9a8a 100%);
+  color: #352d20;
+}
+
+.login-page::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 18% 18%, rgba(37, 72, 48, 0.52), transparent 32%),
+    radial-gradient(ellipse at 83% 20%, rgba(186, 205, 197, 0.38), transparent 35%),
+    linear-gradient(180deg, transparent 55%, rgba(35, 49, 39, 0.32));
+  content: "";
 }
 
 .login-card {
   width: min(100%, 364px);
   padding: 24px;
-  border: 1px solid rgba(194, 220, 128, 0.18);
-  border-radius: 22px;
-  background: #f0f7df;
-  box-shadow: 0 12px 28px rgba(75, 101, 21, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 21px;
+  background: #c5df78;
+  box-shadow: 0 12px 28px rgba(28, 43, 21, 0.25);
 }
 
 .login-brand {
@@ -32,7 +47,7 @@
   gap: 5px;
   padding: 3px 11px;
   border-radius: 999px;
-  background: #d6ed91;
+  background: #d9eea0;
   color: #4b6515;
   font-size: 8px;
   font-weight: 500;
@@ -48,16 +63,18 @@
 
 .login-brand h1 {
   margin: 5px 0 0;
-  color: #34490f;
+  color: #fff;
   font-size: 16px;
   font-weight: 600;
   line-height: 1.35;
+  text-shadow: 0 1px 2px rgba(35, 55, 14, 0.55);
 }
 
 .login-location {
   margin: 3px 0 0;
-  color: #6f6d72;
+  color: #55652e;
   font-size: 9px;
+  font-style: italic;
   line-height: 1.4;
 }
 
@@ -68,7 +85,7 @@
   margin-top: 12px;
   padding: 14px 11px;
   border-radius: 13px;
-  background: #d9eaae;
+  background: #4b6515;
 }
 
 .welcome-icon {
@@ -86,7 +103,7 @@
 
 .welcome-copy h2 {
   margin: 0 0 3px;
-  color: #f4a900;
+  color: #ffc21b;
   font-size: 13px;
   font-weight: 500;
   line-height: 1.35;
@@ -95,7 +112,7 @@
 .welcome-copy p {
   max-width: 240px;
   margin: 0;
-  color: #42383b;
+  color: #fff;
   font-size: 9px;
   line-height: 1.45;
 }
@@ -113,7 +130,7 @@
 .login-field label,
 .login-password-heading label {
   display: block;
-  color: #30262a;
+  color: #302b1e;
   font-size: 9px;
   font-weight: 500;
   line-height: 1.4;
@@ -128,7 +145,7 @@
   padding: 0 11px;
   border: 1px solid rgba(75, 101, 21, 0.07);
   border-radius: 10px;
-  background: #fff;
+  background: #4b6515;
   box-shadow: 0 1px 2px rgba(75, 101, 21, 0.04);
   transition: border-color 160ms ease, box-shadow 160ms ease;
 }
@@ -140,7 +157,7 @@
 
 .login-input-icon {
   flex: 0 0 auto;
-  color: #777d6c;
+  color: #eef5dc;
   font-size: 11px;
 }
 
@@ -152,13 +169,13 @@
   border: 0;
   outline: 0;
   background: transparent;
-  color: #42383b;
+  color: #fff;
   font: inherit;
   font-size: 10px;
 }
 
 .login-input-wrap input::placeholder {
-  color: #766a6e;
+  color: rgba(255, 255, 255, 0.74);
   opacity: 1;
 }
 
@@ -194,7 +211,7 @@
   padding: 0;
   border: 0;
   background: transparent;
-  color: #777d6c;
+  color: #eef5dc;
   cursor: pointer;
 }
 
@@ -214,19 +231,6 @@
   color: #8c302b;
   font-size: 9px;
   line-height: 1.45;
-}
-
-.auth-demo-notice {
-  margin: 10px 0 0;
-  color: #4b6515;
-  font-size: 9px;
-  line-height: 1.45;
-}
-
-.auth-demo-notice {
-  padding: 7px 9px;
-  border-radius: 8px;
-  background: rgba(194, 220, 128, 0.28);
 }
 
 .login-submit {

@@ -33,7 +33,7 @@ export default function AdminLayout({ activePage, label, children }: AdminLayout
   }
 
   return (
-    <div className={`app-container${sidebarCollapsed ? " sidebar-collapsed" : ""}`}>
+    <div className={`app-container${sidebarCollapsed ? " sidebar-collapsed" : ""}${activePage === "dashboard" ? " dashboard-layout" : ""}`}>
       <div className="page-label">{label}</div>
       <aside className="sidebar">
         <div className="sidebar-brand">
@@ -41,6 +41,7 @@ export default function AdminLayout({ activePage, label, children }: AdminLayout
             <img src="/assets/logo%20pasar%20oro%20oro.png" alt="Pasar Oro-Oro Dowo" />
           </div>
           <div className="brand-text">
+            <span className="brand-name">Pasar Oro-Oro Dowo</span>
             <span className="brand-subtitle">Admin Panel</span>
           </div>
         </div>
@@ -51,6 +52,7 @@ export default function AdminLayout({ activePage, label, children }: AdminLayout
             </NavLink>
           ))}
         </nav>
+        <div className="market-status"><span><i className="fa-solid fa-gear" /></span><div><strong>Status Pasar</strong><small>Operasional Aktif</small></div></div>
       </aside>
       <div className="main-content">
         <header className="topbar">

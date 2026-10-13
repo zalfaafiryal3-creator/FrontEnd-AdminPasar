@@ -69,20 +69,16 @@ export default function Login() {
           </div>
         </div>
 
-        <p className="auth-demo-notice" role="note">
-          Mode preview: belum terhubung ke backend. Gunakan email dan kata sandi apa pun untuk masuk.
-        </p>
-
         <form className="login-form" onSubmit={handleSubmit}>
           <div className="login-field">
-            <label htmlFor="admin-username">Email Admin</label>
+            <label htmlFor="admin-username">Nama Pengguna / Email Admin</label>
             <div className="login-input-wrap">
               <i className="fa-regular fa-user login-input-icon" aria-hidden="true" />
               <input
                 id="admin-username"
                 type="email"
                 autoComplete="username"
-                placeholder="nama@email.com"
+                placeholder="admin.utama@pasaroro.id"
                 value={username}
                 onChange={(event) => setUsername(event.target.value)}
                 required
