@@ -1,6 +1,6 @@
 "use client";
 
-import Penjual from "../../features/Penjual/Penjual";
+import Penjual from "./components/Penjual";
 
 export default function PenjualPage() {
   return <Penjual />;

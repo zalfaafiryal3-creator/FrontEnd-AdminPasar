@@ -190,19 +190,12 @@ function PromoRow({
           <span>{promo.quota}/{promo.total}</span>
           <span>{percentage}%</span>
         </div>
-        <div
-          className="mt-1 h-1 overflow-hidden rounded-full bg-[#edf0e9]"
-          role="progressbar"
+        <progress
+          className="mt-1 block h-1 w-full appearance-none rounded-full bg-[#edf0e9] accent-[#28663b] [&::-webkit-progress-bar]:rounded-full [&::-webkit-progress-bar]:bg-[#edf0e9] [&::-webkit-progress-value]:rounded-full [&::-webkit-progress-value]:bg-[#28663b] [&::-moz-progress-bar]:rounded-full [&::-moz-progress-bar]:bg-[#28663b]"
+          max={100}
+          value={Math.min(100, Math.max(0, percentage))}
           aria-label={`Kuota promo ${promo.store}`}
-          aria-valuenow={percentage}
-          aria-valuemin={0}
-          aria-valuemax={100}
-        >
-          <span
-            className="block h-full rounded-full bg-[#28663b]"
-            style={{ width: `${percentage}%` }}
-          />
-        </div>
+        />
       </td>
       <td className="min-w-[92px] px-2 py-2">
         <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[8px] leading-tight ${statusClass[promo.status]}`}>

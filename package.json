@@ -1,18 +1,12 @@
 {
-<<<<<<< HEAD
   "name": "frontend-admin-pasar",
   "private": true,
   "version": "0.0.0",
-=======
-  "name": "fe",
-  "version": "0.1.0",
-  "private": true,
->>>>>>> master
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-<<<<<<< HEAD
+    "lint": "eslint app components auth",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -21,27 +15,13 @@
     "react-dom": "^19.1.1"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "20.17.6",
     "@types/react": "^19.1.13",
     "@types/react-dom": "^19.1.9",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^15.5.28",
+    "tailwindcss": "^4.3.3",
     "typescript": "^5.9.2"
-=======
-    "lint": "eslint"
-  },
-  "dependencies": {
-    "next": "16.4.2",
-    "react": "19.3.0",
-    "react-dom": "19.3.0"
-  },
-  "devDependencies": {
-    "@tailwindcss/turbopack": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.4.2",
-    "tailwindcss": "^4",
-    "typescript": "^5"
->>>>>>> master
   }
 }

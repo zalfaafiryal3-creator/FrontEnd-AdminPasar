@@ -29,7 +29,6 @@ export default function Pengaturan() {
 
   useEffect(() => {
     // Load browser-only profile data after mount to keep the server and initial client render consistent.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setUsername(localStorage.getItem("pasar-admin-profile-username") || "Rani");
     setEmail(localStorage.getItem("pasar-admin-profile-email") || "MaharaniP7@gmail.com");
     setPhone(localStorage.getItem("pasar-admin-profile-phone") || "+62 812-3456-7890");

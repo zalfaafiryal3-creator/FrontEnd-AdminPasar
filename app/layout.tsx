@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
-<<<<<<< HEAD
 import AppProviders from "./providers";
 import "../index.css";
-import "../App.css";
-import "../AdminRefresh.css";
 
 export const metadata: Metadata = {
   title: "Admin Dashboard - Pasar Oro-Oro Dowo",
@@ -12,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="id">
+    <html lang="id" className="min-w-[320px] bg-[#e9f2d2]">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -25,36 +22,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
         />
       </head>
-      <body>
+      <body className="m-0 min-h-screen min-w-[320px] bg-[#e9f2d2] font-['Poppins','Segoe_UI',sans-serif] text-xs text-[#222a21] antialiased">
         <AppProviders>{children}</AppProviders>
       </body>
-=======
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-export const metadata: Metadata = {
-  title: "Admin Pasar Oro-Oro Dowo",
-  description: "Panel administrasi Pasar Oro-Oro Dowo",
-};
-
-export default function RootLayout({ children }: LayoutProps<"/">) {
-  return (
-    <html
-      lang="id"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">{children}</body>
->>>>>>> master
     </html>
   );
 }

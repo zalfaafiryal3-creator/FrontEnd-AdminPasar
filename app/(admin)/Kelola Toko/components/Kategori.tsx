@@ -159,9 +159,12 @@ export default function KelolaToko() {
                 </p>
                 {s.bar ? (
                   <>
-                    <div className="mt-2.5 h-[5px] overflow-hidden rounded-full bg-[#ececec]">
-                      <div className={`h-full rounded-full ${s.bar.color}`} style={{ width: `${s.bar.pct}%` }} />
-                    </div>
+                    <progress
+                      className={`mt-2.5 block h-[5px] w-full appearance-none rounded-full bg-[#ececec] [&::-webkit-progress-bar]:rounded-full [&::-webkit-progress-bar]:bg-[#ececec] ${s.bar.color === "bg-[#2f9e44]" ? "accent-[#2f9e44] [&::-webkit-progress-value]:rounded-full [&::-webkit-progress-value]:bg-[#2f9e44] [&::-moz-progress-bar]:rounded-full [&::-moz-progress-bar]:bg-[#2f9e44]" : "accent-[#fbbf24] [&::-webkit-progress-value]:rounded-full [&::-webkit-progress-value]:bg-[#fbbf24] [&::-moz-progress-bar]:rounded-full [&::-moz-progress-bar]:bg-[#fbbf24]"}`}
+                      max={100}
+                      value={Math.min(100, Math.max(0, s.bar.pct))}
+                      aria-label={`${s.label}: ${s.bar.pct}%`}
+                    />
                     <p className="mt-1 text-[8px] font-semibold text-[#3b3a35]">{s.note}</p>
                   </>
                 ) : (

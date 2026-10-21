@@ -1,6 +1,6 @@
 "use client";
 
-import KelolaPromo from "../../features/KelolaPromo/KelolaPromo";
+import KelolaPromo from "./components/KelolaPromo";
 
 export default function KelolaPromoPage() {
   return <KelolaPromo />;

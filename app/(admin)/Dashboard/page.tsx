@@ -49,9 +49,12 @@ function SellerRanking() {
                 <small className="truncate text-[8px] text-[#7a8176]">{seller.location}</small>
                 <strong className="text-[8px] text-[#4b6515]">{seller.sales}</strong>
               </div>
-              <div className="mt-1 h-1 overflow-hidden rounded-full bg-[#edf0e6]">
-                <span className="block h-full rounded-full bg-[#8aa93d]" style={{ width: seller.sales }} />
-              </div>
+              <progress
+                className="mt-1 block h-1 w-full appearance-none rounded-full bg-[#edf0e6] accent-[#8aa93d] [&::-webkit-progress-bar]:rounded-full [&::-webkit-progress-bar]:bg-[#edf0e6] [&::-webkit-progress-value]:rounded-full [&::-webkit-progress-value]:bg-[#8aa93d] [&::-moz-progress-bar]:rounded-full [&::-moz-progress-bar]:bg-[#8aa93d]"
+                max={100}
+                value={Math.min(100, Math.max(0, Number.parseFloat(seller.sales) || 0))}
+                aria-label={`Performa ${seller.name}`}
+              />
             </div>
           </article>
         ))}

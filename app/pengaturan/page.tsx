@@ -1,6 +1,6 @@
 "use client";
 
-import Pengaturan from "../../features/Pengaturan/Pengaturan";
+import Pengaturan from "./components/Pengaturan";
 
 export default function PengaturanPage() {
   return <Pengaturan />;

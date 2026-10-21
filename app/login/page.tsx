@@ -1,10 +1,6 @@
-<<<<<<< HEAD
 "use client";
 
-import Login from "../../features/login/Login";
-=======
-import Login from "../../auth/login";
->>>>>>> master
+import Login from "./components/Login";
 
 export default function LoginPage() {
   return <Login />;

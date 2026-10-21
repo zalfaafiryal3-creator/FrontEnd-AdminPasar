@@ -1,14 +1,7 @@
-<<<<<<< HEAD
 "use client";
 
-import Dashboard from "../features/Dashboard/Dashboard";
+import Dashboard from "./dashboard/components/Dashboard";
 
 export default function HomePage() {
   return <Dashboard />;
-=======
-import { redirect } from "next/navigation";
-
-export default function Home() {
-  redirect("/login");
->>>>>>> master
 }

@@ -206,9 +206,12 @@ export default function Kategori() {
                   {s.unit && <small className="ml-1 text-[10px] font-normal text-[#74666a]">{s.unit}</small>}
                 </strong>
                 {s.meter !== undefined ? (
-                  <span className="block h-1.5 overflow-hidden rounded-full bg-white/70">
-                    <i className="block h-full rounded-full bg-[#4b6515]" style={{ width: `${s.meter}%` }} />
-                  </span>
+                  <progress
+                    className="block h-1.5 w-full appearance-none rounded-full bg-white/70 accent-[#4b6515] [&::-webkit-progress-bar]:rounded-full [&::-webkit-progress-bar]:bg-white/70 [&::-webkit-progress-value]:rounded-full [&::-webkit-progress-value]:bg-[#4b6515] [&::-moz-progress-bar]:rounded-full [&::-moz-progress-bar]:bg-[#4b6515]"
+                    max={100}
+                    value={Math.min(100, Math.max(0, s.meter))}
+                    aria-label={`${s.label}: ${s.meter}%`}
+                  />
                 ) : (
                   <small className="text-[9px] text-[#74666a]">{s.note}</small>
                 )}
