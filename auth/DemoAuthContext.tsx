@@ -11,6 +11,7 @@ const DEMO_SESSION_KEY = "pasar-admin-demo-user-v2";
 
 type DemoAuthContextValue = {
   currentUser: DemoUser | null;
+  isInitialized: boolean;
   login: (identifier: string, password: string) => Promise<boolean>;
   updateProfile: (user: DemoUser) => string | null;
   logout: () => void;
@@ -39,15 +40,19 @@ function readCurrentUser(): DemoUser | null {
 }
 
 export function DemoAuthProvider({ children }: { children: ReactNode }) {
-  const [currentUser, setCurrentUser] = useState<DemoUser | null>(readCurrentUser);
+  const [currentUser, setCurrentUser] = useState<DemoUser | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
+    setCurrentUser(readCurrentUser());
     sessionStorage.removeItem(LEGACY_DEMO_ACCOUNTS_KEY);
     sessionStorage.removeItem(LEGACY_DEMO_SESSION_KEY);
+    setIsInitialized(true);
   }, []);
 
   const value = useMemo<DemoAuthContextValue>(() => ({
     currentUser,
+    isInitialized,
     login: async (identifier, password) => {
       const normalizedIdentifier = identifier.trim().toLowerCase();
       if (!normalizedIdentifier || !password) {
@@ -79,7 +84,7 @@ export function DemoAuthProvider({ children }: { children: ReactNode }) {
       sessionStorage.removeItem(DEMO_SESSION_KEY);
       setCurrentUser(null);
     },
-  }), [currentUser]);
+  }), [currentUser, isInitialized]);
 
   return <DemoAuthContext.Provider value={value}>{children}</DemoAuthContext.Provider>;
 }

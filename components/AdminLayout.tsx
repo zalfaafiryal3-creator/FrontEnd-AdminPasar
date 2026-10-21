@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useDemoAuth } from "../auth/DemoAuthContext";
 
 const navigation = [
@@ -19,7 +20,7 @@ type AdminLayoutProps = {
 };
 
 export default function AdminLayout({ activePage, label, children }: AdminLayoutProps) {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { currentUser, logout } = useDemoAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
@@ -29,7 +30,7 @@ export default function AdminLayout({ activePage, label, children }: AdminLayout
 
   function handleLogout() {
     logout();
-    navigate("/login", { replace: true });
+    router.replace("/login");
   }
 
   return (
@@ -47,9 +48,9 @@ export default function AdminLayout({ activePage, label, children }: AdminLayout
         </div>
         <nav className="sidebar-nav" aria-label="Navigasi utama">
           {navigation.map((item) => (
-            <NavLink className={`nav-item${activePage === item.id ? " active" : ""}`} to={item.path} key={item.id} aria-current={activePage === item.id ? "page" : undefined}>
+            <Link className={`nav-item${activePage === item.id ? " active" : ""}`} href={item.path} key={item.id} aria-current={activePage === item.id ? "page" : undefined}>
               <i className={`fa-solid ${item.icon}`} /><span>{item.label}</span>
-            </NavLink>
+            </Link>
           ))}
         </nav>
         <div className="market-status"><span><i className="fa-solid fa-gear" /></span><div><strong>Status Pasar</strong><small>Operasional Aktif</small></div></div>
