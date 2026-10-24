@@ -40,7 +40,7 @@ const nav = [
   { label: "Kategori", icon: "fa-sitemap", href: "/kategori" },
   { label: "Kelola Promo", icon: "fa-tags", href: "/kelola-promo" },
   { label: "Pengguna", icon: "fa-user-group", href: "/pengguna" },
-  { label: "Penjual", icon: "fa-shop", href: "/penjual" },
+  { label: "Penjual", icon: "fa-shop", href: "/Penjual" },
   { label: "Pengaturan", icon: "fa-gear", href: "/pengaturan" },
 ];
 

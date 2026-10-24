@@ -35,21 +35,21 @@ export default function KelolaTotalPenjual() {
           <h1 className="mt-0.5 text-xl font-bold leading-tight sm:text-2xl">
             Kelola Data Penjual &amp; Lapak
           </h1>
-          <p className="mt-1 max-w-[540px] text-[10px] leading-relaxed text-[#56604f] sm:text-xs">
+          <p className="mt-1 max-w-[500px] text-[10px] leading-relaxed text-[#56604f] sm:text-xs">
             Pencatatan dan pengelolaan profil pedagang resmi, alokasi lapak/stan, serta informasi kontak pasar rakyat Oro-Oro Dowo Malang.
           </p>
         </div>
 
         <button
           type="button"
-          className="inline-flex min-h-9 shrink-0 items-center gap-2 rounded-lg bg-[#ffbf18] px-3 py-2 text-[10px] font-semibold text-[#342800] shadow-sm transition hover:bg-[#f3b20b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4b6515]"
+          className="inline-flex min-h-9 shrink-0 items-center gap-2 rounded-lg bg-[#ffbf18] px-3 py-2 text-[10px] font-semibold text-white shadow-sm transition hover:bg-[#f3b20b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4b6515]"
         >
           <i className="fa-solid fa-circle-plus" aria-hidden="true" />
           Daftarkan Pedagang Baru
         </button>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 sm:gap-4">
+      <div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
         {summaries.map((summary) => (
           <article
             key={summary.label}

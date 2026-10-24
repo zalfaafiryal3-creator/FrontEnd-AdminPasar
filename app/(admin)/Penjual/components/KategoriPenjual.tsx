@@ -93,8 +93,8 @@ export default function KategoriPenjual() {
 
   return (
     <section className="min-w-0 bg-[#e8f3d3] px-4 pb-4 text-[#303830] sm:px-6">
-      <div className="mb-4 flex flex-wrap items-center gap-1.5 rounded-xl bg-white p-2.5 shadow-sm">
-        <label className="relative min-w-[180px] flex-1">
+      <div className="mb-4 grid grid-cols-1 items-center gap-1.5 rounded-xl bg-white p-2.5 shadow-sm sm:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,0.8fr)_minmax(0,1fr)_auto_auto]">
+        <label className="relative min-w-0">
           <i className="fa-solid fa-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-[9px] text-[#647060]" aria-hidden="true" />
           <input
             className={`${controlClass} w-full pl-7`}

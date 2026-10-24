@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useDemoAuth } from "../auth/DemoAuthContext";
+import { useDemoAuth, type UserRole } from "../auth/DemoAuthContext";
 
 const navigation = [
   { id: "dashboard", label: "Dashboard", icon: "fa-house", path: "/dashboard" },
@@ -9,9 +9,11 @@ const navigation = [
   { id: "categories", label: "Kategori", icon: "fa-tag", path: "/kategori" },
   { id: "promos", label: "Kelola Promo", icon: "fa-fire", path: "/kelola-promo" },
   { id: "users", label: "Pengguna", icon: "fa-user", path: "/pengguna" },
-  { id: "sellers", label: "Penjual", icon: "fa-store", path: "/penjual" },
+  { id: "sellers", label: "Penjual", icon: "fa-store", path: "/Penjual" },
   { id: "settings", label: "Pengaturan", icon: "fa-gear", path: "/pengaturan" },
 ];
+
+const sellerNavigationIds = new Set(["stores", "promos", "sellers"]);
 
 type AdminLayoutProps = {
   activePage?: string;
@@ -46,7 +48,7 @@ export default function AdminLayout({ activePage, label, children }: AdminLayout
           </div>
         </div>
         <nav className="sidebar-nav mt-1 grid w-full gap-0.5" aria-label="Navigasi utama">
-          {navigation.map((item) => (
+          {getNavigationForRole(currentUser?.role).map((item) => (
             <Link
               className={`nav-item flex min-h-[30px] items-center gap-2 rounded-md px-1.5 py-1 text-[9px] leading-tight font-medium text-[#4b5842] transition-colors hover:bg-[#c2dc80]/60 ${activePage === item.id ? "active bg-[#ffb817] text-white" : ""} ${sidebarCollapsed ? "justify-center px-0" : ""}`}
               href={item.path}
@@ -65,7 +67,7 @@ export default function AdminLayout({ activePage, label, children }: AdminLayout
       <div className="main-content flex min-h-0 min-w-0 flex-col overflow-y-auto bg-[#e9f2d2]">
         <header className="topbar sticky top-0 z-10 flex h-10 shrink-0 items-center justify-between gap-2 border-b border-[#496d2e]/15 bg-[#f8faef] px-3.5 max-[760px]:px-4 max-[520px]:gap-2 max-[520px]:px-3.5">
           <div className="topbar-left flex min-w-0 flex-1 items-center gap-2.5">
-            <button className={`menu-toggle grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white/70 text-[#222a21] ${activePage === "dashboard" ? "hidden max-[760px]:grid" : ""}`} type="button" aria-label="Toggle Menu" aria-expanded={!sidebarCollapsed} onClick={() => setSidebarCollapsed((collapsed) => !collapsed)}><i className="fa-solid fa-bars" /></button>
+            <button className={`menu-toggle grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white/70 text-[#222a21] ${activePage === "dashboard" ? "hidden max-[760px]:grid" : activePage === "sellers" ? "max-[760px]:grid md:hidden" : ""}`} type="button" aria-label="Toggle Menu" aria-expanded={!sidebarCollapsed} onClick={() => setSidebarCollapsed((collapsed) => !collapsed)}><i className="fa-solid fa-bars" /></button>
             <label className="search-input-wrapper flex h-[27px] w-full max-w-[270px] min-w-0 items-center gap-2 rounded-full bg-white px-2.5 text-[#65714f]"><i className="fa-solid fa-magnifying-glass search-icon text-[10px]" /><input className="w-full min-w-0 border-0 bg-transparent text-[9px] outline-none placeholder:text-[#8a9082]" type="search" placeholder="Cari toko, produk, atau pedagang..." aria-label="Cari" /></label>
           </div>
           <div className="topbar-right flex shrink-0 items-center gap-2 max-[520px]:gap-2">
@@ -81,4 +83,10 @@ export default function AdminLayout({ activePage, label, children }: AdminLayout
       </div>
     </div>
   );
+}
+
+function getNavigationForRole(role: UserRole | undefined) {
+  return role === "seller"
+    ? navigation.filter((item) => sellerNavigationIds.has(item.id))
+    : navigation;
 }
