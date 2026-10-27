@@ -8,20 +8,25 @@ function AuthGuard({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { currentUser, isInitialized } = useDemoAuth();
-  const isLoginPage = pathname === "/login";
+  const isPublicAuthPage = pathname === "/login" || pathname === "/register";
   const canAccessCurrentPath = currentUser
     ? canAccessPath(currentUser.role, pathname)
     : false;
 
   useEffect(() => {
-    if (isInitialized && !currentUser && !isLoginPage) {
+    if (isInitialized && !currentUser && !isPublicAuthPage) {
       router.replace(`/login?from=${encodeURIComponent(pathname)}`);
-    } else if (isInitialized && currentUser && !isLoginPage && !canAccessCurrentPath) {
+    } else if (
+      isInitialized &&
+      currentUser &&
+      !isPublicAuthPage &&
+      !canAccessCurrentPath
+    ) {
       router.replace(getDefaultPath(currentUser.role));
     }
-  }, [canAccessCurrentPath, currentUser, isInitialized, isLoginPage, pathname, router]);
+  }, [canAccessCurrentPath, currentUser, isInitialized, isPublicAuthPage, pathname, router]);
 
-  if (!isLoginPage && (!isInitialized || !currentUser || !canAccessCurrentPath)) {
+  if (!isPublicAuthPage && (!isInitialized || !currentUser || !canAccessCurrentPath)) {
     return null;
   }
 

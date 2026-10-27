@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 const focusRing =
@@ -49,10 +51,13 @@ export default function Login() {
 
       {/* PANEL KIRI */}
       <section className="relative hidden min-h-screen overflow-hidden rounded-r-[5px] md:block">
-        <img
-          src="/assets/pasar-oro-oro-dowo.jpg"
+        <Image
+          src="/assets/login-background.jpg"
           alt="Pasar Rakyat Oro-Oro Dowo"
-          className="absolute inset-0 h-full w-full object-cover object-center"
+          fill
+          priority
+          sizes="(min-width: 768px) 54vw, 100vw"
+          className="object-cover object-center"
         />
 
         <div className="absolute inset-0 bg-gradient-to-b from-[#183c2e]/55 via-[#1e3823]/35 to-[#152b19]/85" />
@@ -279,12 +284,12 @@ export default function Login() {
 
               <p className="text-center text-[8px] text-[#858b7d]">
                 Belum punya akun?{" "}
-                <a
+                <Link
                   href="/register"
                   className={`font-bold text-[#4b6515] underline underline-offset-2 ${focusRing}`}
                 >
                   Daftar di sini
-                </a>
+                </Link>
               </p>
             </form>
           </div>
