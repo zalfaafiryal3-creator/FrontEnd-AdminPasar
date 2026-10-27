@@ -22,7 +22,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
         />
       </head>
-      <body className="m-0 min-h-screen min-w-[320px] bg-[#e9f2d2] font-['Poppins','Segoe_UI',sans-serif] text-xs text-[#222a21] antialiased">
+      <body className="m-0 min-h-screen min-w-[320px] bg-[#e9f2d2] font-['Poppins','Segoe_UI',sans-serif] text-sm text-[#222a21] antialiased">
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

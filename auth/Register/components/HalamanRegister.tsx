@@ -106,9 +106,14 @@ export default function Register() {
 
         <div className="relative z-10 w-full max-w-[380px]">
           <div className="mb-6 flex items-center gap-3 md:hidden">
-            <div className="grid size-10 place-items-center rounded-xl bg-[#ffc21b] text-[#4b6515]">
-              <i className="fa-solid fa-store" aria-hidden="true" />
-            </div>
+            <Image
+              src="/assets/logo-pasar.png"
+              alt="Logo Pasar Oro-Oro Dowo"
+              width={200}
+              height={200}
+              quality={100}
+              className="h-[52px] w-[52px] rounded-2xl object-contain"
+            />
             <div>
               <p className="text-sm font-bold text-[#354b27]">
                 Pasar Oro-Oro Dowo
@@ -250,6 +255,24 @@ export default function Register() {
               {isSubmitting ? "Membuat akun..." : "Buat Akun"}
               <i className="fa-solid fa-arrow-right text-[9px]" aria-hidden="true" />
             </button>
+
+            {/* Google Sign-in button */}
+            <button
+              type="button"
+              onClick={() => {
+                console.log("Google sign-in clicked – configure OAuth Client ID");
+              }}
+              className={`flex w-full items-center justify-center gap-2 rounded-[10px] bg-white px-4 py-2.5 text-[11px] font-medium text-[#4b6515] shadow-[0_2px_6px_rgba(0,0,0,0.1)] transition hover:-translate-y-px hover:bg-[#f5f5f5] ${focusRing}`}
+            >
+              <svg viewBox="0 0 533.5 544.3" className="h-4 w-4" xmlns="http://www.w3.org/2000/svg">
+                <path fill="#4285F4" d="M533.5 278.4c0-17.8-1.6-35-4.6-51.6H272v97.7h147.4c-6.4 34.5-25.7 63.7-54.7 83.2v68.9h88.4c51.8-47.8 81.4-118.5 81.4-198.2z"/>
+                <path fill="#34A853" d="M272 544.3c73.5 0 135.2-24.4 180.2-66.2l-88.4-68.9c-24.4 16.4-55.5 26-91.8 26-70.5 0-130.2-47.5-151.6-111.4H30.5v69.9c45 89.6 138.5 150.6 241.5 150.6z"/>
+                <path fill="#FBBC05" d="M120.4 323.8c-5.5-16.4-8.6-33.8-8.6-51.8s3.1-35.4 8.6-51.8V150.3H30.5c-18.5 36.7-29 78.9-29 122.7s10.5 86 29 122.7l89.9-69.9z"/>
+                <path fill="#EA4335" d="M272 107.7c39.9 0 75.8 13.7 104.1 40.6l78.1-78.1C416.1 24.5 349.5 0 272 0 169 0 75.5 61 30.5 150.3l89.9 69.9C141.8 155.2 201.5 107.7 272 107.7z"/>
+                <path fill="none" d="M0 0h533.5v544.3H0z"/>
+              </svg>
+              <span>Daftar dengan Google</span>
+            </button>
           </form>
 
           <p className="mt-4 text-center text-[9px] text-[#858a7b]">
@@ -278,9 +301,14 @@ export default function Register() {
         <div className="absolute inset-0 bg-gradient-to-b from-[#1b2c18]/50 via-transparent to-[#132211]/55" />
 
         <header className="absolute left-7 top-7 z-10 flex items-center gap-3">
-          <div className="grid size-9 place-items-center rounded-xl bg-[#ffc21b] text-[#4b6515]">
-            <i className="fa-solid fa-store" aria-hidden="true" />
-          </div>
+          <Image
+            src="/assets/logo-pasar.png"
+            alt="Logo Pasar Oro-Oro Dowo"
+            width={200}
+            height={200}
+            quality={100}
+            className="h-[52px] w-[52px] rounded-2xl object-contain"
+          />
           <div>
             <p className="text-sm font-bold text-white">Pasar Oro-Oro Dowo</p>
             <p className="mt-0.5 text-[9px] italic text-white/80">

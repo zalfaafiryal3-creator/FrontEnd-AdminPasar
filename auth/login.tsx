@@ -64,9 +64,14 @@ export default function Login() {
 
         {/* Logo dan nama pasar */}
         <div className="absolute left-7 top-7 z-10 flex items-center gap-2">
-          <div className="grid size-7 place-items-center rounded-lg bg-[#ffbd1b] text-sm text-white">
-            <i className="fa-solid fa-store" />
-          </div>
+          <Image
+            src="/assets/logo-pasar.png"
+            alt="Logo Pasar Oro-Oro Dowo"
+            width={200}
+            height={200}
+            quality={100}
+            className="h-[52px] w-[52px] rounded-2xl object-contain"
+          />
           <div className="text-white">
             <p className="text-[11px] font-bold leading-tight">
               Pasar Oro-Oro Dowo
@@ -123,9 +128,14 @@ export default function Login() {
         <div className="relative z-10 w-full max-w-[360px]">
           {/* Logo mobile */}
           <div className="mb-6 flex items-center gap-2 md:hidden">
-            <div className="grid size-9 place-items-center rounded-xl bg-[#ffbd1b] text-white">
-              <i className="fa-solid fa-store" />
-            </div>
+            <Image
+              src="/assets/logo-pasar.png"
+              alt="Logo Pasar Oro-Oro Dowo"
+              width={200}
+              height={200}
+              quality={100}
+              className="h-[52px] w-[52px] rounded-2xl object-contain"
+            />
             <div>
               <p className="text-xs font-bold">Pasar Oro-Oro Dowo</p>
               <p className="text-[9px] text-[#79826e]">Admin Panel</p>
