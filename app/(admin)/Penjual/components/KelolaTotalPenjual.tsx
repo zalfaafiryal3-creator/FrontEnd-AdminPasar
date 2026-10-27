@@ -1,3 +1,9 @@
+"use client";
+
+import { useState } from "react";
+import TambahPedagangBaru from "../../../penjual/components/TambahPedagangBaru";
+import type { PedagangData } from "../../../penjual/components/TambahPedagangBaru";
+
 const summaries = [
   {
     label: "TOTAL PEDAGANG TERDAFTAR",
@@ -25,8 +31,16 @@ const summaries = [
 ];
 
 export default function KelolaTotalPenjual() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleSave = (_data: PedagangData) => {
+    // Data already saved to localStorage inside TambahPedagangBaru
+    setIsModalOpen(false);
+  };
+
   return (
-    <section className="min-w-0 bg-[#e8f3d3] px-4 py-3 text-[#20251f] sm:px-6">
+    <>
+      <section className="min-w-0 bg-[#e8f3d3] px-4 py-3 text-[#20251f] sm:px-6">
       <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[9px] font-semibold uppercase tracking-wide text-[#45513d]">
@@ -42,6 +56,7 @@ export default function KelolaTotalPenjual() {
 
         <button
           type="button"
+          onClick={() => setIsModalOpen(true)}
           className="inline-flex min-h-9 shrink-0 items-center gap-2 rounded-lg bg-[#ffbf18] px-3 py-2 text-[10px] font-semibold text-white shadow-sm transition hover:bg-[#f3b20b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4b6515]"
         >
           <i className="fa-solid fa-circle-plus" aria-hidden="true" />
@@ -90,5 +105,12 @@ export default function KelolaTotalPenjual() {
         ))}
       </div>
     </section>
+
+    <TambahPedagangBaru
+      isOpen={isModalOpen}
+      onClose={() => setIsModalOpen(false)}
+      onSave={handleSave}
+    />
+  </>
   );
 }

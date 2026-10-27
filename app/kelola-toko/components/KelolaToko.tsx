@@ -1,5 +1,6 @@
 import AdminLayout from "../../../components/AdminLayout";
 import ManagementTable, { type ManagementTableConfig } from "../../../components/ManagementTable";
+import TambahTokoBaru, { type TokoData } from "./TambahTokoBaru";
 
 const config: ManagementTableConfig = {
   className: "store-management",
@@ -18,7 +19,7 @@ const config: ManagementTableConfig = {
     { label: "TOTAL TRANSAKSI", value: "28", detail: "36% transaksi bulan ini", icon: "fa-wallet", tone: "amber" },
   ],
   filters: [
-    { label: "Semua Kategori", field: "category", options: ["Makanan & Jajanan", "Sayuran", "Daging & Ikan", "Sembako & Perabot"] },
+    { label: "Semua Kategori", field: "category", options: ["Makanan", "Sayur & Buah", "Kuliner Legend", "Daging & Ikan", "Sembako & Perabotan", "Mainan & Baju"] },
     { label: "Semua Status", field: "status", options: ["Aktif / Terverifikasi", "Menunggu Verifikasi"] },
     { label: "Semua Zona (Blok)", field: "zone", options: ["Blok A", "Blok B", "Blok C"] },
   ],
@@ -31,13 +32,33 @@ const config: ManagementTableConfig = {
     { id: "store-default-bakso", store: "Bakso Goreng Bangkit", handle: "@baksogoreng_org", owner: "Joko Prasetyo", email: "joko.prasetyo@gmail.com", phone: "+62 822-7711-4050", category: "Makanan & Jajanan", rating: "4.9", transactions: "2.410", zone: "Blok A-10", status: "Aktif / Terverifikasi" },
     { id: "store-default-jamu", store: "Jamu Tradisional Bu Darto", handle: "@jamubudarto", owner: "Darto Widoyono", email: "darto.widoyono@gmail.com", phone: "+62 812-5555-5544", category: "Makanan & Jajanan", rating: "4.8", transactions: "640", zone: "Blok B-15", status: "Aktif / Terverifikasi" },
   ],
-  fields: [
-    { name: "store", label: "Nama Toko" },
-    { name: "owner", label: "Nama Pemilik" },
-    { name: "category", label: "Kategori", type: "select", options: ["Makanan & Jajanan", "Sayuran", "Daging & Ikan", "Sembako & Perabot"] },
-    { name: "rating", label: "Rating", type: "number", value: "4.8", min: "0", max: "5", step: "0.1" },
-    { name: "status", label: "Status", type: "select", options: ["Menunggu Verifikasi", "Aktif / Terverifikasi"] },
-  ],
+  customAddModal: ({ isOpen, onClose, onSave }) => (
+    <TambahTokoBaru
+      isOpen={isOpen}
+      onClose={onClose}
+      onSave={(data: TokoData) => {
+        onSave({
+          id: data.id || crypto.randomUUID(),
+          store: data.store,
+          handle: data.handle || `@${data.store.toLowerCase().replace(/[^a-z0-9]/g, "")}`,
+          owner: data.owner,
+          email: data.email || "",
+          phone: data.phone,
+          category: data.category,
+          rating: data.rating || "5.0",
+          transactions: data.transactions || "0",
+          zone: data.zone,
+          status: data.status === "Buka" ? "Aktif / Terverifikasi" : data.status,
+          operatingHours: data.operatingHours,
+          establishedYear: data.establishedYear,
+          description: data.description,
+          bannerImage: data.bannerImage || "",
+          logoImage: data.logoImage || "",
+          products: JSON.stringify(data.products),
+        });
+      }}
+    />
+  ),
   renderRecord: (record) => <>
     <td><div className="flex min-w-0 items-center gap-2"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#f8e49f] text-[#4b6515]"><i className="fa-solid fa-basket-shopping" /></span><span className="min-w-0"><strong className="block text-xs leading-snug text-[#594045]">{record.store}</strong><small className="mt-0.5 block break-words text-[10px] leading-snug text-[#74666a]">{record.handle} • {record.zone}</small></span></div></td>
     <td><div className="flex min-w-0 flex-col gap-1 break-words text-[10px] text-[#594045]"><strong className="text-[11px]">{record.owner}</strong><span>{record.phone}</span><span>{record.email}</span></div></td>

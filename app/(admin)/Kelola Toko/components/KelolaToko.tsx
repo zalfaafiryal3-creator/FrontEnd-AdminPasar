@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import TambahTokoModal, { type TokoData } from "../../../../components/TambahTokoModal";
 
 type Store = {
   id: string;
@@ -30,13 +31,15 @@ const inputClass =
   "h-9 min-w-0 rounded-lg border border-[#dfe6cc] bg-white px-3 text-xs text-[#594045] outline-none focus-visible:ring-2 focus-visible:ring-[#8cae4e]";
 
 export default function KelolaToko() {
+  const [storeList, setStoreList] = useState<Store[]>(initialStores);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const visibleStores = useMemo(() => {
     const query = search.trim().toLocaleLowerCase("id");
-    return initialStores.filter((store) => {
+    return storeList.filter((store) => {
       const matchesSearch =
         `${store.store} ${store.handle} ${store.owner} ${store.email} ${store.phone} ${store.zone}`
           .toLocaleLowerCase("id")
@@ -64,6 +67,7 @@ export default function KelolaToko() {
           </div>
           <button
             type="button"
+            onClick={() => setIsModalOpen(true)}
             className="inline-flex min-h-9 items-center gap-2 rounded-lg bg-[#c2dc80] px-3 text-xs font-semibold text-[#3b501d] transition hover:bg-[#b5d36b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4b6515]"
           >
             <i className="fa-solid fa-plus" aria-hidden="true" /> Tambah Toko Baru
@@ -169,6 +173,27 @@ export default function KelolaToko() {
           </div>
         </section>
       </div>
+
+      <TambahTokoModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSave={(data: TokoData) => {
+          const newStore: Store = {
+            id: data.id || `store-${Date.now()}`,
+            store: data.store,
+            handle: data.handle || `@${data.store.toLowerCase().replace(/[^a-z0-9]/g, "")}`,
+            owner: data.owner,
+            email: data.email || "",
+            phone: data.phone,
+            category: data.category,
+            rating: data.rating || "5.0",
+            transactions: data.transactions || "0",
+            zone: data.zone,
+            status: data.status === "Buka" ? "Aktif / Terverifikasi" : "Menunggu Verifikasi",
+          };
+          setStoreList((prev) => [newStore, ...prev]);
+        }}
+      />
     </main>
   );
 }

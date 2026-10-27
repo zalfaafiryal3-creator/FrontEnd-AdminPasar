@@ -1,5 +1,6 @@
 import AdminLayout from "../../../components/AdminLayout";
 import ManagementTable, { type ManagementTableConfig } from "../../../components/ManagementTable";
+import TambahKelolaPromo, { type PromoData } from "./tambahkelolapromo";
 
 const config: ManagementTableConfig = {
   className: "promo-management",
@@ -20,7 +21,7 @@ const config: ManagementTableConfig = {
   ],
   filters: [
     { label: "Semua Kategori", field: "category", options: ["Makanan", "Sayuran", "Sembako"] },
-    { label: "Semua Status", field: "status", options: ["Sedang Berlangsung", "Akan Datang", "Hampir Habis"] },
+    { label: "Semua Status", field: "status", options: ["Sedang Berlangsung", "Akan Datang", "Hampir Habis", "Setiap Akhir Pekan", "Hari Pasaran Khusus"] },
     { label: "Semua Tipe Promo", field: "discount", options: ["Diskon Tunai", "Promo Ganda", "Promo Mingguan"] },
   ],
   columns: ["INFORMASI TOKO & PROMO", "PEMILIK LAPAK", "KATEGORI", "NILAI PROMO & KODE", "PERIODE & SYARAT", "KUOTA / KLAIM", "STATUS"],
@@ -30,14 +31,25 @@ const config: ManagementTableConfig = {
     { id: "promo-default-warung", store: "Warung Bu As", owner: "Bu Asmawati", category: "Sembako", discount: "Promo Ganda", period: "1 Sep - 8 Minggu", requirements: "Pelanggan langganan", quota: "95 / 120", status: "Sedang Berlangsung" },
     { id: "promo-default-mie", store: "Mie Ayam Oro-Oro Dowo", owner: "Cak Man", category: "Makanan", discount: "Promo Mie Ayam", period: "Selasa, 24 Okt 2026", requirements: "Khusus hari Selasa", quota: "12 / 150", status: "Hampir Habis" },
   ],
-  fields: [
-    { name: "store", label: "Nama Toko" },
-    { name: "owner", label: "Nama Pemilik" },
-    { name: "category", label: "Kategori", type: "select", options: ["Makanan", "Sayuran", "Daging & Ikan", "Mainan"] },
-    { name: "discount", label: "Promo", value: "Diskon 10%" },
-    { name: "period", label: "Periode Promo", value: "19 September - 22 September 2027" },
-    { name: "requirements", label: "Persyaratan", value: "Minimal pembelian 10K" },
-  ],
+  customAddModal: ({ isOpen, onClose, onSave }) => (
+    <TambahKelolaPromo
+      isOpen={isOpen}
+      onClose={onClose}
+      onSave={(data: PromoData) => {
+        onSave({
+          id: data.id || `promo-${Date.now()}`,
+          store: data.store,
+          owner: "Pedagang Pasar",
+          category: data.category.replace("Zona ", ""),
+          discount: data.title,
+          period: `${data.periodDisplay} • ${data.operatingHours}`,
+          requirements: data.terms,
+          quota: data.quota || "0 / 100",
+          status: data.status,
+        });
+      }}
+    />
+  ),
   renderRecord: (record) => {
     const quota = record.quota || "0 / 100";
     const [claimed, total] = quota.split("/");

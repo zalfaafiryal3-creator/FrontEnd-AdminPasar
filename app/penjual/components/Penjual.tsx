@@ -1,4 +1,5 @@
 import { useState } from "react";
+import TambahPedagangBaru, { type PedagangData } from "./TambahPedagangBaru";
 import AdminLayout from "../../../components/AdminLayout";
 
 const sellerSeed = [
@@ -14,6 +15,7 @@ export default function Penjual() {
   const [search, setSearch] = useState("");
   const [zoneFilter, setZoneFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const visibleSellers = sellers.filter((seller) =>
     `${seller.name} ${seller.shop} ${seller.block}`.toLowerCase().includes(search.toLowerCase())
     && (!zoneFilter || seller.type === zoneFilter)
@@ -32,6 +34,22 @@ export default function Penjual() {
     setSelectedIds([]);
   };
 
+  const handleSavePedagang = (data: PedagangData) => {
+    setSellers((current) => [
+      {
+        id: data.id,
+        name: data.name,
+        shop: data.shop,
+        block: data.block,
+        status: data.status === "Aktif" ? "Lapak Buka" : data.status === "Nonaktif" ? "Tutup Sementara" : "Menunggu Verifikasi",
+        phone: data.phone,
+        email: data.email ?? "",
+        type: data.type ?? "Zona Umum",
+      },
+      ...current,
+    ]);
+  };
+
   const handleToggleSellerStatus = () => {
     setSellers((current) => current.map((seller) => selectedIds.includes(seller.id)
       ? { ...seller, status: seller.status === "Lapak Buka" ? "Tutup Sementara" : "Lapak Buka" }
@@ -47,7 +65,7 @@ export default function Penjual() {
             <h1 className="mb-1 text-[21px] font-bold leading-[1.3] text-[#594045] max-[760px]:text-[19px] max-[560px]:text-[17px] max-[390px]:text-base">Kelola Data Penjual &amp; Lapak</h1>
             <p className="m-0 text-xs leading-[1.5] text-[#594045] max-[760px]:text-[11px] max-[560px]:text-[10px]">Pencatatan dan pengelolaan informasi pedagang, lokasi lapak/kios aktif, serta informasi kontak pasar rakyat Oro-Oro Dowo Malang.</p>
           </div>
-          <button className="inline-flex min-h-9 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-[9px] border-0 bg-[#4b6515] px-4 py-2 text-[11px] font-semibold text-white [font-family:inherit] hover:bg-[#3e5510] focus-visible:outline-2 focus-visible:outline-[#fbbf24] focus-visible:outline-offset-2 max-[760px]:self-start" type="button"><i className="fa-solid fa-plus" /> Daftarkan Pedagang Baru</button>
+          <button className="inline-flex min-h-9 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-[9px] border-0 bg-[#4b6515] px-4 py-2 text-[11px] font-semibold text-white [font-family:inherit] hover:bg-[#3e5510] focus-visible:outline-2 focus-visible:outline-[#fbbf24] focus-visible:outline-offset-2 max-[760px]:self-start" type="button" onClick={() => setIsModalOpen(true)}><i className="fa-solid fa-plus" /> Daftarkan Pedagang Baru</button>
         </div>
 
         <section className="mb-4 grid grid-cols-3 gap-3 max-[760px]:grid-cols-1 max-[760px]:gap-2" aria-label="Ringkasan penjual">
@@ -115,6 +133,12 @@ export default function Penjual() {
           <button className="inline-flex min-h-[34px] cursor-pointer items-center justify-center gap-1.5 rounded-[10px] border border-[#4b6515] bg-white px-3 py-2 text-[11px] font-semibold text-[#4b6515] [font-family:inherit] hover:bg-[#edf5d7] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-[#fbbf24] focus-visible:outline-offset-2" type="button" onClick={handleToggleSellerStatus} disabled={!selectedIds.length}><i className="fa-regular fa-circle-pause" /> Nonaktifkan Sementara</button>
         </div>
       </main>
+
+      <TambahPedagangBaru
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSave={handleSavePedagang}
+      />
     </AdminLayout>
   );
 }
