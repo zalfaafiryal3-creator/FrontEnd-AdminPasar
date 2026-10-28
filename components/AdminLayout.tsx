@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useDemoAuth, type UserRole } from "../auth/DemoAuthContext";
+import { useAuth } from "../lib/user-auth";
 
 const navigation = [
   { id: "dashboard",  label: "Dashboard",    icon: "fa-house",        path: "/dashboard" },
@@ -23,15 +24,15 @@ type AdminLayoutProps = {
 
 export default function AdminLayout({ activePage, label, children }: AdminLayoutProps) {
   const router = useRouter();
-  const { currentUser, logout } = useDemoAuth();
+    const { currentUser, logout } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     document.title = `${label.replace(/^Admin /, "")} - Pasar Oro-Oro Dowo`;
   }, [label]);
 
-  function handleLogout() {
-    logout();
+  async function handleLogout() {
+    await logout();
     router.replace("/login");
   }
 

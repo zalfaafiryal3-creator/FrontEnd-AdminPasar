@@ -1,13 +1,15 @@
-
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { getDefaultPath, useAuth } from "../../../lib/user-auth";
+import { validateRegister } from "../../../lib/validation/auth";
 
 export default function Register() {
-  const router = useRouter();
+    const router = useRouter();
+    const { register } = useAuth();
 
   const [nama, setNama] = useState("");
   const [email, setEmail] = useState("");
@@ -23,60 +25,37 @@ export default function Register() {
     document.title = "Daftar Akun Admin - Pasar Oro-Oro Dowo";
   }, []);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
 
-    if (!nama.trim() || !email.trim() || !password) {
-      setMessage("Semua kolom wajib diisi.");
-      return;
-    }
-
-    if (password.length < 6) {
-      setMessage("Kata sandi minimal 6 karakter.");
-      return;
-    }
-
-    if (password !== konfirmasi) {
-      setMessage("Konfirmasi kata sandi tidak cocok.");
+    const errors = validateRegister({
+      name: nama,
+      email,
+      password,
+      confirmPassword: konfirmasi,
+    });
+    if (errors.length > 0) {
+      setMessage(errors.join(" "));
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      const key = "pasar-admin-registered-accounts";
-      const saved = localStorage.getItem(key);
-      const accounts: {
-        nama: string;
-        email: string;
-        password: string;
-      }[] = saved ? JSON.parse(saved) : [];
+      const result = await register({
+        name: nama,
+        email,
+        password,
+        confirmPassword: konfirmasi,
+      });
 
-      if (!Array.isArray(accounts)) {
-        throw new Error("Data akun tidak valid.");
-      }
-
-      const normalizedEmail = email.trim().toLowerCase();
-
-      if (
-        accounts.some(
-          (account) => account.email === normalizedEmail
-        )
-      ) {
-        setMessage("Email sudah terdaftar. Silakan masuk.");
+      if (!result.ok) {
+        setMessage(result.error);
         return;
       }
 
-      accounts.push({
-        nama: nama.trim(),
-        email: normalizedEmail,
-        password,
-      });
-
-      localStorage.setItem(key, JSON.stringify(accounts));
-
-      router.push("/login?registered=1");
+      router.replace(getDefaultPath(result.user.role));
     } catch {
       setMessage("Pendaftaran gagal. Silakan coba lagi.");
     } finally {
@@ -210,6 +189,10 @@ export default function Register() {
               </div>
             </div>
 
+            <p className="-mt-2 text-[9px] leading-relaxed text-[#7b8273]">
+              Minimal 8 karakter, mengandung huruf besar, huruf kecil, dan angka.
+            </p>
+            
             <div>
               <label
                 htmlFor="konfirmasi"

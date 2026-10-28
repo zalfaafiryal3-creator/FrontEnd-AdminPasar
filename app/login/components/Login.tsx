@@ -4,14 +4,15 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { useDemoAuth } from "../../../auth/DemoAuthContext";
+import { getDefaultPath, useAuth } from "../../../lib/user-auth";
+import { validateLogin } from "../../../lib/validation/auth";
 
 const focusRing =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4b6515]";
 
 export default function Login() {
   const router = useRouter();
-  const { currentUser, isInitialized, login } = useDemoAuth();
+  const { currentUser, isInitialized, login } = useAuth();
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -32,24 +33,25 @@ export default function Login() {
     }
   }, [currentUser, isInitialized, router]);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     setAuthMessage("");
     setForgotMessage("");
 
-    if (!username.trim() || !password) {
-      setAuthMessage("Email dan kata sandi wajib diisi.");
+    const validationError = validateLogin(username, password);
+    if (validationError) {
+      setAuthMessage(validationError);
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      const success = await login(username, password, "admin");
+      const result = await login(username, password);
 
-      if (!success) {
-        setAuthMessage("Email dan kata sandi wajib diisi.");
+      if (!result.ok) {
+        setAuthMessage(result.error);
         return;
       }
 
@@ -60,13 +62,11 @@ export default function Login() {
         !from.startsWith("//") &&
         from !== "/login"
           ? from
-          : "/dashboard";
+          : getDefaultPath(result.user.role);
 
       router.replace(destination);
     } catch {
-      setAuthMessage(
-        "Login gagal diproses. Silakan coba lagi."
-      );
+      setAuthMessage("Login gagal diproses. Silakan coba lagi.");
     } finally {
       setIsSubmitting(false);
     }

@@ -2,13 +2,12 @@
 
 import { useEffect, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { canAccessPath, getDefaultPath, DemoAuthProvider, useDemoAuth } from "../auth/DemoAuthContext";
+import { AuthProvider, canAccessPath, getDefaultPath, useAuth } from "../lib/user-auth";
 
 function AuthGuard({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { currentUser, isInitialized } = useDemoAuth();
-  const isPublicAuthPage = pathname === "/login" || pathname === "/register";
+  const { currentUser, isInitialized } = useAuth();  const isPublicAuthPage = pathname === "/login" || pathname === "/register";
   const canAccessCurrentPath = currentUser
     ? canAccessPath(currentUser.role, pathname)
     : false;
@@ -35,8 +34,8 @@ function AuthGuard({ children }: { children: ReactNode }) {
 
 export default function AppProviders({ children }: { children: ReactNode }) {
   return (
-    <DemoAuthProvider>
+      <AuthProvider>
       <AuthGuard>{children}</AuthGuard>
-    </DemoAuthProvider>
+    </AuthProvider>
   );
 }

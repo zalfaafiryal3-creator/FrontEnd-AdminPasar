@@ -1,4 +1,4 @@
-import { useDemoAuth } from "../../../auth/DemoAuthContext";
+import { useAuth } from "../../../lib/user-auth";
 import AdminLayout from "../../../components/AdminLayout";
 import Peringkat from "./peringkat";
 import PromoAktif from "./PromoAktif";
@@ -6,7 +6,7 @@ import { StatCards, CapacityPanel } from "./Ringkasanaktifitas";
 import RiwayatAktivitas from "./RiwayatAktifitas";
 
 export default function Dashboard() {
-  const { currentUser } = useDemoAuth();
+  const { currentUser } = useAuth();
   const dateLabel = new Intl.DateTimeFormat("id-ID", {
     day: "2-digit",
     month: "short",

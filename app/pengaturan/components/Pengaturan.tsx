@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import AdminLayout from "../../../components/AdminLayout";
-import { useDemoAuth } from "../../../auth/DemoAuthContext";
+import { useAuth } from "../../../lib/user-auth";
 
 export default function Pengaturan() {
-  const { currentUser, updateProfile } = useDemoAuth();
+  const { currentUser, updateProfile } = useAuth();
   const [username, setUsername] = useState(currentUser?.username ?? "");
   const [email, setEmail] = useState(currentUser?.email ?? "");
   const [phone, setPhone] = useState("+62 812-3456-7890");
