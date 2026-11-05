@@ -109,10 +109,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await apiRequest<ApiAuthResponse>("/api/auth/register", {
         method: "POST",
         body: {
-          ...input,
           name: input.name.trim(),
           email: input.email.trim(),
-          role: input.role ?? "seller",
+          password: input.password,
+          confirmPassword: input.confirmPassword,
         },
       });
       const user = toAuthUser(data.user);

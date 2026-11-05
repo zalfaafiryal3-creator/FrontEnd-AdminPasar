@@ -2,6 +2,13 @@ import { useRef, useState, type FormEvent, type ReactNode } from "react";
 
 type RecordEntry = { id: string; [key: string]: string };
 
+export type RecordActions = {
+  onEdit?: () => void;
+  onDelete?: () => void;
+  isBusy: boolean;
+  isProtected: boolean;
+};
+
 type SelectField = {
   name: string;
   label: string;
@@ -21,7 +28,7 @@ type InputField = {
   required?: boolean;
 };
 
-export type ManagementTableConfig = {
+export type ManagementTableConfig<TCustomData = RecordEntry> = {
   className?: string;
   tableClass: string;
   title: string;
@@ -39,12 +46,12 @@ export type ManagementTableConfig = {
   columns: string[];
   initialRecords: RecordEntry[];
   fields?: (SelectField | InputField)[];
-  renderRecord: (record: RecordEntry) => ReactNode;
+  renderRecord: (record: RecordEntry, actions?: RecordActions) => ReactNode;
   onAddClick?: () => void;
   customAddModal?: (props: {
     isOpen: boolean;
     onClose: () => void;
-    onSave: (record: RecordEntry) => void;
+    onSave: (data: TCustomData) => Promise<void>;
   }) => ReactNode;
 };
 
@@ -56,10 +63,36 @@ function readStorage<T = RecordEntry>(key: string): T[] {
   }
 }
 
-type ManagementTableProps = { config: ManagementTableConfig };
+type ManagementTableProps<TCustomData> = {
+  config: ManagementTableConfig<TCustomData>;
+  remoteData?: {
+    records: RecordEntry[];
+    isLoading: boolean;
+    error: string | null;
+    emptyMessage?: string;
+    canAdd?: boolean;
+    onSaveCustomData?: (data: TCustomData) => Promise<void>;
+    onEditRecord?: (record: RecordEntry) => void;
+    onDeleteRecord?: (record: RecordEntry) => void;
+    isRecordProtected?: (record: RecordEntry) => boolean;
+    isMutating?: boolean;
+  };
+};
 
-export default function ManagementTable({ config }: ManagementTableProps) {
-  const [records, setRecords] = useState<RecordEntry[]>(() => {
+function isRecordEntry(value: unknown): value is RecordEntry {
+  return typeof value === "object"
+    && value !== null
+    && "id" in value
+    && typeof value.id === "string";
+}
+
+export default function ManagementTable<TCustomData = RecordEntry>({
+  config,
+  remoteData,
+}: ManagementTableProps<TCustomData>) {
+  const [localRecords, setLocalRecords] = useState<RecordEntry[]>(() => {
+    if (remoteData) return [];
+
     const deletedIds = new Set(config.deletedStorageKey ? readStorage<string>(config.deletedStorageKey) : []);
     const saved = readStorage(config.storageKey)
       .map((record) => ({ ...record, id: record.id || crypto.randomUUID() }))
@@ -76,6 +109,7 @@ export default function ManagementTable({ config }: ManagementTableProps) {
   const [openFilters, setOpenFilters] = useState<Record<string, boolean>>({});
   const [selectedIds, setSelectedIds] = useState(() => new Set<string>());
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const records = remoteData?.records ?? localRecords;
   const visibleRecords = records.filter((record) =>
     Object.values(record).join(" ").toLocaleLowerCase("id").includes(search.trim().toLocaleLowerCase("id"))
     && (config.filters ?? []).every(({ field }) => !filters[field] || record[field] === filters[field] || String(record[field] ?? "").startsWith(filters[field])),
@@ -83,11 +117,22 @@ export default function ManagementTable({ config }: ManagementTableProps) {
 
   const [isCustomModalOpen, setIsCustomModalOpen] = useState(false);
 
-  function handleSaveCustomRecord(record: RecordEntry) {
+  async function handleSaveCustomRecord(data: TCustomData) {
+    if (remoteData?.onSaveCustomData) {
+      await remoteData.onSaveCustomData(data);
+      setIsCustomModalOpen(false);
+      return;
+    }
+
+    if (!isRecordEntry(data)) {
+      throw new Error("Data formulir tidak dapat disimpan.");
+    }
+
+    const record = data;
     if (!record.id) record.id = crypto.randomUUID();
     const updated = [...readStorage(config.storageKey), record];
     localStorage.setItem(config.storageKey, JSON.stringify(updated));
-    setRecords((current) => [...current, record]);
+    setLocalRecords((current) => [...current, record]);
     setIsCustomModalOpen(false);
   }
 
@@ -96,7 +141,7 @@ export default function ManagementTable({ config }: ManagementTableProps) {
     const record = Object.fromEntries(new FormData(event.currentTarget)) as RecordEntry;
     record.id = crypto.randomUUID();
     localStorage.setItem(config.storageKey, JSON.stringify([...readStorage(config.storageKey), record]));
-    setRecords((current) => [...current, record]);
+    setLocalRecords((current) => [...current, record]);
     event.currentTarget.reset();
     dialogRef.current?.close();
   }
@@ -123,7 +168,7 @@ export default function ManagementTable({ config }: ManagementTableProps) {
     localStorage.setItem(config.storageKey, JSON.stringify(
       readStorage(config.storageKey).filter((record) => !selectedIds.has(record.id)),
     ));
-    setRecords((current) => current.filter((record) => !selectedIds.has(record.id)));
+    setLocalRecords((current) => current.filter((record) => !selectedIds.has(record.id)));
     setSelectedIds(new Set());
   }
 
@@ -132,7 +177,7 @@ export default function ManagementTable({ config }: ManagementTableProps) {
       ? { ...record, status: record.status === "Ditangguhkan" ? "Aktif" : "Ditangguhkan" }
       : record);
     localStorage.setItem(config.storageKey, JSON.stringify(updated));
-    setRecords(updated);
+    setLocalRecords(updated);
   }
 
   return (
@@ -143,6 +188,9 @@ export default function ManagementTable({ config }: ManagementTableProps) {
         <button
           className="add-button inline-flex min-h-8 shrink-0 items-center justify-center gap-1.5 rounded-md bg-[#ffb91b] px-3 py-2 text-[10px] font-semibold text-white shadow-sm transition hover:bg-[#eba900] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#496d2e]"
           type="button"
+          disabled={remoteData?.canAdd === false || remoteData?.isMutating}
+          title={remoteData?.canAdd === false ? "Kategori toko belum tersedia." : undefined}
+          aria-disabled={remoteData?.canAdd === false || remoteData?.isMutating}
           onClick={() => {
             if (config.customAddModal) {
               setIsCustomModalOpen(true);
@@ -221,10 +269,31 @@ export default function ManagementTable({ config }: ManagementTableProps) {
                 }
               } : undefined}>
                 {config.selectable && <td className="selection-column px-2 py-2"><input type="checkbox" className="accent-[#496d2e]" aria-label={`Pilih ${record.name || record.store || record.id}`} checked={selectedIds.has(record.id)} onChange={() => toggleSelection(record.id)} onClick={(event) => event.stopPropagation()} /></td>}
-                {config.renderRecord(record)}
+                {config.renderRecord(record, {
+                  onEdit: remoteData?.onEditRecord ? () => remoteData.onEditRecord?.(record) : undefined,
+                  onDelete: remoteData?.onDeleteRecord ? () => remoteData.onDeleteRecord?.(record) : undefined,
+                  isBusy: Boolean(remoteData?.isMutating),
+                  isProtected: remoteData?.isRecordProtected?.(record) ?? false,
+                })}
               </tr>
             ))}
-            {!visibleRecords.length && <tr><td className="empty-table px-3 py-8 text-center text-[#66705e]" colSpan={config.columns.length + (config.selectable ? 1 : 0)}>Data tidak ditemukan.</td></tr>}
+            {!visibleRecords.length && (
+              <tr>
+                <td
+                  className="empty-table px-3 py-8 text-center text-[#66705e]"
+                  colSpan={config.columns.length + (config.selectable ? 1 : 0)}
+                  role={remoteData?.isLoading || remoteData?.error ? "status" : undefined}
+                >
+                  {remoteData?.isLoading
+                    ? "Memuat daftar toko..."
+                    : remoteData?.error
+                      ? remoteData.error
+                      : records.length === 0
+                        ? remoteData?.emptyMessage ?? "Data tidak ditemukan."
+                        : "Data tidak ditemukan."}
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

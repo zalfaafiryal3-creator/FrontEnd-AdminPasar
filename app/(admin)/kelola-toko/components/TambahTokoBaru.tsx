@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useState, useRef, type ChangeEvent, type FormEvent } from "react";
 import Image from "next/image";
 
 export type MenuItem = {
@@ -35,18 +35,14 @@ export type TokoData = {
 type TambahTokoBaruProps = {
   isOpen?: boolean;
   onClose?: () => void;
-  onSave?: (data: TokoData) => void;
+  onSave?: (data: TokoData) => Promise<void>;
+  categoryOptions: Array<{ id: number; name: string }>;
+  initialData?: TokoData;
+  isEditing?: boolean;
+  canEditStatus?: boolean;
+  allowPhotoUpload?: boolean;
   isPageMode?: boolean; // When rendered as a standalone page rather than popup modal
 };
-
-const CATEGORIES = [
-  "Makanan",
-  "Sayur & Buah",
-  "Kuliner Legend",
-  "Daging & Ikan",
-  "Sembako & Perabotan",
-  "Mainan & Baju",
-];
 
 const STATUS_OPTIONS: Array<{ value: TokoData["status"]; label: string; tone: string; icon: string }> = [
   { value: "Buka", label: "Buka (Operasional Aktif)", tone: "text-[#2e7d32] bg-[#e8f5e9] border-[#a5d6a7]", icon: "fa-circle-check" },
@@ -57,46 +53,75 @@ const STATUS_OPTIONS: Array<{ value: TokoData["status"]; label: string; tone: st
 export default function TambahTokoBaru({
   isOpen = true,
   onClose = () => {},
-  onSave = () => {},
+  onSave = async () => {},
+  categoryOptions,
+  initialData,
+  isEditing = false,
+  canEditStatus = false,
+  allowPhotoUpload = false,
   isPageMode = false,
 }: TambahTokoBaruProps) {
   // 1. Informasi Utama
-  const [namaToko, setNamaToko] = useState("");
-  const [namaPemilik, setNamaPemilik] = useState("");
-  const [kategori, setKategori] = useState(CATEGORIES[0]);
-  const [nomorBlok, setNomorBlok] = useState("");
+  const [namaToko, setNamaToko] = useState(initialData?.store ?? "");
+  const [namaPemilik, setNamaPemilik] = useState(initialData?.owner ?? "");
+  const [kategori, setKategori] = useState(initialData?.category ?? categoryOptions[0]?.name ?? "");
+  const [nomorBlok, setNomorBlok] = useState(initialData?.zone ?? "");
 
   // 2. Status & Operasional
-  const [statusKios, setStatusKios] = useState<TokoData["status"]>("Buka");
-  const [jamBuka, setJamBuka] = useState("06:00");
-  const [jamTutup, setJamTutup] = useState("17:00");
-  const [tahunBerdiri, setTahunBerdiri] = useState("");
+  const [statusKios, setStatusKios] = useState<TokoData["status"]>(initialData?.status ?? (canEditStatus ? "Buka" : "Menunggu Verifikasi"));
+  const [jamBuka, setJamBuka] = useState(initialData?.operatingHours.split(" - ")[0] ?? "06:00");
+  const [jamTutup, setJamTutup] = useState(initialData?.operatingHours.split(" - ")[1] ?? "17:00");
+  const [tahunBerdiri, setTahunBerdiri] = useState(initialData?.establishedYear ?? "");
 
   // 3. Media & Visual
-  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [bannerPreview, setBannerPreview] = useState<string | null>(initialData?.bannerImage ?? null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(initialData?.logoImage ?? null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
   // 4. Informasi Tambahan & Kontak
-  const [telepon, setTelepon] = useState("");
-  const [email, setEmail] = useState("");
-  const [deskripsi, setDeskripsi] = useState("");
+  const [telepon, setTelepon] = useState(initialData?.phone ?? "");
+  const [email, setEmail] = useState(initialData?.email ?? "");
+  const [deskripsi, setDeskripsi] = useState(initialData?.description ?? "");
 
   // 5. Katalog Produk / Menu Awal (Multi-item dinamis)
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([
-    {
-      id: "item-1",
-      nama: "",
-      harga: "",
-      deskripsi: "",
-      foto: null,
-    },
-  ]);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(initialData?.products ?? [{
+    id: "item-1",
+    nama: "",
+    harga: "",
+    deskripsi: "",
+    foto: null,
+  }]);
 
   // UI state
   const [errorMsg, setErrorMsg] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!initialData && categoryOptions.length > 0 && !categoryOptions.some((category) => category.name === kategori)) {
+      setKategori(categoryOptions[0].name);
+    }
+  }, [categoryOptions, initialData, kategori]);
+
+  useEffect(() => {
+    if (isOpen) return;
+    setNamaToko("");
+    setNamaPemilik("");
+    setKategori(categoryOptions[0]?.name ?? "");
+    setNomorBlok("");
+    setStatusKios(canEditStatus ? "Buka" : "Menunggu Verifikasi");
+    setJamBuka("06:00");
+    setJamTutup("17:00");
+    setTahunBerdiri("");
+    setBannerPreview(null);
+    setLogoPreview(null);
+    setTelepon("");
+    setEmail("");
+    setDeskripsi("");
+    setMenuItems([{ id: "item-1", nama: "", harga: "", deskripsi: "", foto: null }]);
+    setErrorMsg("");
+    setIsSubmitting(false);
+  }, [canEditStatus, categoryOptions, isOpen, initialData]);
 
   // Handle Banner Upload
   const handleBannerChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -173,7 +198,7 @@ export default function TambahTokoBaru({
   };
 
   // Submit Handler
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
 
@@ -190,8 +215,6 @@ export default function TambahTokoBaru({
       return;
     }
 
-    setIsSubmitting(true);
-
     const generatedHandle = `@${namaToko
       .toLowerCase()
       .replace(/[^a-z0-9]/g, "")
@@ -205,9 +228,9 @@ export default function TambahTokoBaru({
       zone: nomorBlok.trim(),
       status: statusKios,
       operatingHours: `${jamBuka} - ${jamTutup}`,
-      establishedYear: tahunBerdiri.trim() || "2024",
+      establishedYear: tahunBerdiri.trim(),
       phone: telepon.trim(),
-      email: email.trim() || `${namaPemilik.toLowerCase().replace(/\s+/g, "")}@pasar-orodoro.id`,
+      email: email.trim(),
       description: deskripsi.trim(),
       bannerImage: bannerPreview,
       logoImage: logoPreview,
@@ -217,11 +240,15 @@ export default function TambahTokoBaru({
       transactions: "0",
     };
 
-    setTimeout(() => {
-      onSave(newStoreData);
-      setIsSubmitting(false);
+    setIsSubmitting(true);
+    try {
+      await onSave(newStoreData);
       onClose();
-    }, 300);
+    } catch (error) {
+      setErrorMsg(error instanceof Error ? error.message : "Toko gagal disimpan.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (!isOpen && !isPageMode) return null;
@@ -242,7 +269,7 @@ export default function TambahTokoBaru({
           </div>
           <div>
             <h2 className="text-base font-bold tracking-tight text-[#222a21] sm:text-lg">
-              Tambah Toko Baru
+              {isEditing ? "Edit Toko" : "Tambah Toko Baru"}
             </h2>
             <p className="text-[11px] text-[#66705e] sm:text-xs">
               Formulir lengkap pendaftaran direktori kios &amp; katalog pedagang Pasar Oro-Oro Dowo
@@ -253,8 +280,9 @@ export default function TambahTokoBaru({
         {!isPageMode && (
           <button
             type="button"
-            onClick={onClose}
-            className="grid size-8 place-items-center rounded-full text-[#66705e] transition hover:bg-[#edf5d7] hover:text-[#222a21] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#8cae4e]"
+            onClick={() => !isSubmitting && onClose()}
+            disabled={isSubmitting}
+            className="grid size-8 place-items-center rounded-full text-[#66705e] transition hover:bg-[#edf5d7] hover:text-[#222a21] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#8cae4e] disabled:cursor-not-allowed disabled:opacity-50"
             aria-label="Tutup formulir"
           >
             <i className="fa-solid fa-xmark text-sm" />
@@ -273,6 +301,11 @@ export default function TambahTokoBaru({
               <i className="fa-solid fa-circle-exclamation text-sm shrink-0" />
               <span>{errorMsg}</span>
             </div>
+          )}
+          {!allowPhotoUpload && (
+            <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800" role="status">
+              Fitur foto belum tersedia. Foto tidak akan dikirim atau disimpan.
+            </p>
           )}
 
           {/* ═════════ 1. INFORMASI UTAMA TOKO ═════════ */}
@@ -338,9 +371,9 @@ export default function TambahTokoBaru({
                     onChange={(e) => setKategori(e.target.value)}
                     className="h-10 w-full cursor-pointer appearance-none rounded-xl border border-[#dce8c5] bg-white pl-9 pr-8 text-xs text-[#222a21] shadow-2xs transition focus:border-[#496d2e] focus:outline-none focus:ring-2 focus:ring-[#8cae4e]/40"
                   >
-                    {CATEGORIES.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
+                    {categoryOptions.map((category) => (
+                      <option key={category.id} value={category.name}>
+                        {category.name}
                       </option>
                     ))}
                   </select>
@@ -391,6 +424,7 @@ export default function TambahTokoBaru({
                     id="status-kios"
                     value={statusKios}
                     onChange={(e) => setStatusKios(e.target.value as TokoData["status"])}
+                    disabled={!canEditStatus}
                     className="h-10 w-full cursor-pointer appearance-none rounded-xl border border-[#dce8c5] bg-white px-3 pr-8 text-xs font-medium text-[#222a21] shadow-2xs transition focus:border-[#496d2e] focus:outline-none focus:ring-2 focus:ring-[#8cae4e]/40"
                   >
                     {STATUS_OPTIONS.map((opt) => (
@@ -401,6 +435,11 @@ export default function TambahTokoBaru({
                   </select>
                   <i className="fa-solid fa-chevron-down pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] text-[#748564]" />
                 </div>
+                {!canEditStatus && (
+                  <small className="mt-1 block text-[10px] text-[#748564]">
+                    Status hanya dapat diubah oleh admin.
+                  </small>
+                )}
               </div>
 
               {/* Jam Operasional */}
@@ -488,12 +527,13 @@ export default function TambahTokoBaru({
                   type="file"
                   accept="image/png,image/jpeg,image/webp"
                   className="hidden"
+                  disabled={!allowPhotoUpload}
                   onChange={handleBannerChange}
                 />
 
                 <div
-                  onClick={() => bannerInputRef.current?.click()}
-                  className={`group relative flex min-h-[145px] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-4 text-center transition ${
+                  onClick={() => allowPhotoUpload && bannerInputRef.current?.click()}
+                  className={`group relative flex min-h-[145px] ${allowPhotoUpload ? "cursor-pointer" : "cursor-not-allowed opacity-60"} flex-col items-center justify-center rounded-2xl border-2 border-dashed p-4 text-center transition ${
                     bannerPreview
                       ? "border-[#8cae4e] bg-[#f5f8ed] p-1.5"
                       : "border-[#c8d8ae] bg-[#fbfdf7] hover:border-[#8cae4e] hover:bg-[#f3f7e8]"
@@ -520,7 +560,7 @@ export default function TambahTokoBaru({
                         <i className="fa-solid fa-image text-lg" />
                       </div>
                       <p className="text-xs font-semibold text-[#3b4733]">
-                        Klik untuk upload foto banner kios
+                        {allowPhotoUpload ? "Klik untuk upload foto banner kios" : "Upload foto belum tersedia"}
                       </p>
                       <p className="mt-0.5 text-[10px] text-[#748564]">
                         Format: JPG, PNG, WEBP (Rasio ideal 16:9 atau lebar, maks. 3MB)
@@ -552,12 +592,13 @@ export default function TambahTokoBaru({
                   type="file"
                   accept="image/png,image/jpeg,image/webp"
                   className="hidden"
+                  disabled={!allowPhotoUpload}
                   onChange={handleLogoChange}
                 />
 
                 <div
-                  onClick={() => logoInputRef.current?.click()}
-                  className={`group relative flex min-h-[145px] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-3 text-center transition ${
+                  onClick={() => allowPhotoUpload && logoInputRef.current?.click()}
+                  className={`group relative flex min-h-[145px] ${allowPhotoUpload ? "cursor-pointer" : "cursor-not-allowed opacity-60"} flex-col items-center justify-center rounded-2xl border-2 border-dashed p-3 text-center transition ${
                     logoPreview
                       ? "border-[#8cae4e] bg-[#f5f8ed] p-1.5"
                       : "border-[#c8d8ae] bg-[#fbfdf7] hover:border-[#8cae4e] hover:bg-[#f3f7e8]"
@@ -581,7 +622,7 @@ export default function TambahTokoBaru({
                       <div className="mb-2 grid size-11 place-items-center rounded-full bg-[#f8e49f] text-[#594045] transition group-hover:scale-105">
                         <i className="fa-solid fa-basket-shopping text-base" />
                       </div>
-                      <p className="text-xs font-semibold text-[#3b4733]">Upload Logo Kios</p>
+                      <p className="text-xs font-semibold text-[#3b4733]">{allowPhotoUpload ? "Upload Logo Kios" : "Upload foto belum tersedia"}</p>
                       <p className="mt-0.5 text-[10px] text-[#748564]">
                         Format: JPG, PNG (Rasio 1:1)
                       </p>
@@ -659,7 +700,7 @@ export default function TambahTokoBaru({
           </section>
 
           {/* ═════════ 5. KATALOG PRODUK / MENU AWAL ═════════ */}
-          <section className="rounded-2xl border border-[#e5edd8] bg-[#fdfefc] p-4.5 sm:p-5 shadow-xs">
+          {!isEditing && <section className="rounded-2xl border border-[#e5edd8] bg-[#fdfefc] p-4.5 sm:p-5 shadow-xs">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-[#edf2e4] pb-3">
               <div className="flex items-center gap-2.5">
                 <span className="flex size-6 items-center justify-center rounded-full bg-[#eef5df] text-[11px] font-bold text-[#496d2e]">
@@ -733,6 +774,7 @@ export default function TambahTokoBaru({
                           type="file"
                           accept="image/*"
                           className="hidden"
+                          disabled={!allowPhotoUpload}
                           onChange={(e) => handleMenuPhotoChange(item.id, e)}
                         />
                       </label>
@@ -798,7 +840,7 @@ export default function TambahTokoBaru({
                 </div>
               ))}
             </div>
-          </section>
+          </section>}
         </div>
 
         {/* ── FOOTER ACTIONS ───────────────────────────────────── */}
@@ -810,8 +852,9 @@ export default function TambahTokoBaru({
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={onClose}
-              className="min-h-10 cursor-pointer rounded-xl border border-[#dce3d4] bg-white px-5 py-2 text-xs font-semibold text-[#4b5842] shadow-2xs transition hover:bg-[#f2f7e5] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#8cae4e]"
+              onClick={() => !isSubmitting && onClose()}
+              disabled={isSubmitting}
+              className="min-h-10 cursor-pointer rounded-xl border border-[#dce3d4] bg-white px-5 py-2 text-xs font-semibold text-[#4b5842] shadow-2xs transition hover:bg-[#f2f7e5] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#8cae4e] disabled:cursor-not-allowed disabled:opacity-50"
             >
               Batal
             </button>
@@ -826,7 +869,7 @@ export default function TambahTokoBaru({
                 </>
               ) : (
                 <>
-                  <i className="fa-solid fa-floppy-disk" /> Simpan Toko
+                  <i className="fa-solid fa-floppy-disk" /> {isEditing ? "Simpan Perubahan" : "Simpan Toko"}
                 </>
               )}
             </button>
@@ -846,7 +889,7 @@ export default function TambahTokoBaru({
       role="dialog"
       aria-modal="true"
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget && !isSubmitting) onClose();
       }}
     >
       {content}
