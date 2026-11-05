@@ -5,16 +5,16 @@ import { useDemoAuth, type UserRole } from "../auth/DemoAuthContext";
 import { useAuth } from "../lib/user-auth";
 
 const navigation = [
-  { id: "dashboard",  label: "Dashboard",    icon: "fa-house",        path: "/dashboard" },
-  { id: "stores",     label: "Kelola Toko",  icon: "fa-shopping-bag", path: "/kelola-toko" },
-  { id: "categories", label: "Kategori",     icon: "fa-tag",          path: "/kategori" },
-  { id: "promos",     label: "Kelola Promo", icon: "fa-fire",         path: "/kelola-promo" },
-  { id: "users",      label: "Pengguna",     icon: "fa-user",         path: "/pengguna" },
-  { id: "sellers",    label: "Penjual",      icon: "fa-store",        path: "/Penjual" },
-  { id: "settings",   label: "Pengaturan",   icon: "fa-gear",         path: "/pengaturan" },
+  { id: "dashboard", label: "Dashboard", icon: "fa-house", path: "/dashboard" },
+  { id: "stores", label: "Kelola Toko", icon: "fa-shopping-bag", path: "/kelola-toko" },
+  { id: "categories", label: "Kategori", icon: "fa-tag", path: "/kategori" },
+  { id: "promos", label: "Kelola Promo", icon: "fa-fire", path: "/kelola-promo" },
+  { id: "users", label: "Pengguna", icon: "fa-user", path: "/pengguna" },
+  { id: "sellers", label: "Penjual", icon: "fa-store", path: "/penjual" },
+  { id: "settings", label: "Pengaturan", icon: "fa-gear", path: "/pengaturan" },
 ];
 
-const sellerNavigationIds = new Set(["stores", "promos", "sellers"]);
+const sellerNavigationIds = new Set(["dashboard", "stores", "promos", "sellers", "settings"]);
 
 type AdminLayoutProps = {
   activePage?: string;
@@ -24,7 +24,7 @@ type AdminLayoutProps = {
 
 export default function AdminLayout({ activePage, label, children }: AdminLayoutProps) {
   const router = useRouter();
-    const { currentUser, logout } = useAuth();
+  const { currentUser, logout } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
@@ -167,13 +167,13 @@ export default function AdminLayout({ activePage, label, children }: AdminLayout
                 className="profile-avatar grid h-9 w-9 place-items-center rounded-full
                   bg-[#4f681b] text-sm text-white font-semibold"
               >
-                {currentUser?.username?.charAt(0).toUpperCase() ?? "A"}
+                {currentUser?.role === "seller" ? "P" : (currentUser?.username?.charAt(0).toUpperCase() ?? "A")}
               </div>
               <div className="profile-meta flex min-w-0 flex-col">
                 <span className="admin-name text-sm font-semibold text-[#343d2b] truncate max-w-[120px]">
                   {currentUser?.username ?? "Admin"}
                 </span>
-                <span className="admin-role text-xs text-[#6c7569]">Super Admin</span>
+                <span className="admin-role text-xs text-[#6c7569]">{currentUser?.role === "seller" ? "Penjual" : "Admin"}</span>
               </div>
             </div>
 

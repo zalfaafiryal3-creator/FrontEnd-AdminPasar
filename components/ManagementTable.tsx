@@ -73,6 +73,7 @@ export default function ManagementTable({ config }: ManagementTableProps) {
   });
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<Record<string, string>>({});
+  const [openFilters, setOpenFilters] = useState<Record<string, boolean>>({});
   const [selectedIds, setSelectedIds] = useState(() => new Set<string>());
   const dialogRef = useRef<HTMLDialogElement>(null);
   const visibleRecords = records.filter((record) =>
@@ -158,7 +159,54 @@ export default function ManagementTable({ config }: ManagementTableProps) {
       {config.summary && <section className="management-summary mb-3 grid grid-cols-2 gap-2 md:grid-cols-4" aria-label="Ringkasan">{config.summary.map((metric) => <article className={`summary-card flex min-h-[70px] items-center justify-between gap-2 rounded-lg border border-[#dce8c5] bg-white p-3 shadow-sm ${metric.tone === "amber" ? "border-amber-200 bg-amber-50" : ""}`} key={metric.label}><div className="flex min-w-0 flex-col"><span className="text-[9px] text-[#66705e]">{metric.label}</span><strong className="text-base font-bold text-[#222a21]">{metric.value}</strong><small className="text-[8px] text-[#66705e]">{metric.detail}</small></div><i className={`fa-solid ${metric.icon} text-base text-[#496d2e]`} aria-hidden="true" /></article>)}</section>}
       <div className="management-toolbar mb-2 flex flex-wrap items-center gap-1.5 rounded-lg bg-white p-2 shadow-sm">
         <label className="filter-bar flex min-h-8 min-w-[140px] flex-1 items-center gap-2 rounded-full border border-[#dce8c5] bg-[#fbfcf7] px-3 text-[#61744b]"><i className="fa-solid fa-magnifying-glass text-[10px]" /><input className="w-full min-w-0 bg-transparent text-[10px] text-[#37412e] outline-none placeholder:text-[#8a9082]" type="search" placeholder={config.searchPlaceholder} aria-label={config.searchLabel} value={search} onChange={(event) => setSearch(event.target.value)} /></label>
-        {config.filters?.map((filter) => <label className="table-filter" key={filter.field}><span className="sr-only">{filter.label}</span><select className="h-8 max-w-full rounded-md border border-[#dce8c5] bg-[#fbfcf7] px-2 text-[9px] text-[#414b36] focus:outline-2 focus:outline-[#496d2e]" value={filters[filter.field] ?? ""} onChange={(event) => setFilters((current) => ({ ...current, [filter.field]: event.target.value }))}><option value="">{filter.label}</option>{filter.options.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>)}
+        {config.filters?.map((filter) => {
+          const selectedValue = filters[filter.field];
+          const selectedLabel = selectedValue || filter.label;
+
+          return (
+            <div className="table-filter relative" key={filter.field}>
+              <span className="sr-only">{filter.label}</span>
+              <button
+                type="button"
+                className="flex h-[42px] min-w-[170px] max-w-full items-center justify-between gap-3 rounded-xl border border-[#d1e0b3] bg-[#f4f8eb] px-4 pr-9 text-left text-[10px] font-medium text-[#344625] shadow-[0_3px_10px_rgba(73,109,46,0.10)] transition-all duration-200 hover:border-[#8cb05f] focus:border-[#6d8f41] focus:outline-none focus:ring-2 focus:ring-[#dfecc4]"
+                onClick={() => setOpenFilters((current) => ({ ...current, [filter.field]: !current[filter.field] }))}
+              >
+                <span className="truncate">{selectedLabel}</span>
+                <i className="fa-solid fa-chevron-down text-[9px] text-[#5a7a39]" aria-hidden="true" />
+              </button>
+
+              {openFilters[filter.field] && (
+                <div className="absolute left-0 right-0 z-20 mt-2 overflow-hidden rounded-xl border border-[#dfe7cc] bg-[#f9faf5] shadow-[0_12px_30px_rgba(57,79,39,0.12)]">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFilters((current) => ({ ...current, [filter.field]: "" }));
+                      setOpenFilters((current) => ({ ...current, [filter.field]: false }));
+                    }}
+                    className={`flex w-full items-center justify-between px-4 py-3 text-left text-[10px] font-medium transition ${!selectedValue ? "bg-[#d9ebba] text-[#2d4b1a]" : "text-[#4d5b43] hover:bg-[#eef5df]"}`}
+                  >
+                    <span>{filter.label}</span>
+                    {!selectedValue && <i className="fa-solid fa-check text-[9px]" aria-hidden="true" />}
+                  </button>
+                  {filter.options.map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => {
+                        setFilters((current) => ({ ...current, [filter.field]: option }));
+                        setOpenFilters((current) => ({ ...current, [filter.field]: false }));
+                      }}
+                      className={`flex w-full items-center justify-between px-4 py-3 text-left text-[10px] font-medium transition ${selectedValue === option ? "bg-[#d9ebba] text-[#2d4b1a]" : "text-[#4d5b43] hover:bg-[#eef5df]"}`}
+                    >
+                      <span>{option}</span>
+                      {selectedValue === option && <i className="fa-solid fa-check text-[9px]" aria-hidden="true" />}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
         {config.selectable && <button className="table-filter-action grid h-8 w-8 place-items-center rounded-md border border-[#dce8c5] bg-white text-[#526344] hover:bg-[#edf5d7]" type="button" onClick={() => { setSearch(""); setFilters({}); }}><i className="fa-solid fa-rotate-right" aria-hidden="true" /><span className="sr-only">Reset filter</span></button>}
       </div>
       <div className="table-shell overflow-x-auto rounded-lg border border-[#dce8c5] bg-white shadow-sm">

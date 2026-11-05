@@ -1,6 +1,5 @@
-"use client";
-
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import AdminLayout from "../../../../components/AdminLayout";
 
 type Menu = {
   id: string;
@@ -44,45 +43,6 @@ const defaultMenus: Menu[] = [
   { id: "menu-mainan-5", category: "Mainan & Baju", item: "Mainan Anak Cerdas", details: "Permainan edukasi dan boneka", icon: "◉", leaf: true },
 ];
 
-type Summary = {
-  label: string;
-  value: string;
-  unit?: string;
-  note?: string;
-  icon: string;
-  amber?: boolean;
-  meter?: number;
-};
-
-const summaries: Summary[] = [
-  { label: "TOTAL TOKO", value: "251", note: "251 Aktif • bulan ini", icon: "fa-store" },
-  { label: "TOTAL KATEGORI", value: "6", unit: "kategori aktif", note: "Zonasi Standar Revitalisasi SNI", icon: "fa-shop", amber: true },
-  { label: "KATEGORI DOMINAN", value: "Makanan", note: "(46%) • 36 Toko & Jajanan Tradisional", icon: "fa-utensils" },
-  { label: "OKUPANSI ZONASI", value: "92%", unit: "Lapak Terisi", icon: "fa-store", amber: true, meter: 92 },
-];
-
-/* ---------- class bersama ---------- */
-const focusRing =
-  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-[#4b6515]";
-
-const addButton =
-  `inline-flex min-h-9 cursor-pointer items-center justify-center gap-[7px] rounded-[9px] bg-[#c2dc80] px-[13px] py-2 text-xs font-semibold text-[#594045] ` +
-  `shadow-[0_3px_7px_rgba(75,101,21,0.12)] transition duration-150 ` +
-  `hover:-translate-y-px hover:bg-[#b5d36b] hover:shadow-[0_5px_10px_rgba(75,101,21,0.16)] ${focusRing}`;
-
-const toolbarControl =
-  "h-9 rounded-[9px] border border-[rgba(194,220,128,0.75)] bg-white px-2.5 text-[10px] text-[#594045] " +
-  "focus:border-[#4b6515] focus:outline focus:outline-2 focus:outline-[rgba(194,220,128,0.45)]";
-
-const toolButton =
-  "inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-[9px] bg-[#edf5d7] px-3 text-[10px] font-semibold text-[#4b6515] " +
-  "transition duration-150 hover:bg-[#e3efc2]";
-
-const dialogInput =
-  "mt-1 w-full rounded-lg border border-[rgba(194,220,128,0.75)] px-2.5 py-2 text-xs text-[#594045] " +
-  "focus:border-[#4b6515] focus:outline focus:outline-2 focus:outline-[rgba(194,220,128,0.45)]";
-
-/* ---------- penyimpanan ---------- */
 function readStorage<T = Menu>(key: string): T[] {
   try {
     return JSON.parse(localStorage.getItem(key) || "[]");
@@ -105,8 +65,29 @@ export default function Kategori() {
   const [menus, setMenus] = useState(loadMenus);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("Semua Kategori");
+  const [sortOption, setSortOption] = useState("Urutkan: Toko Terbanyak");
+  const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
+  const [sortMenuOpen, setSortMenuOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const categoryMenuRef = useRef<HTMLDivElement>(null);
+  const sortMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handlePointerDown(event: MouseEvent) {
+      const target = event.target as Node;
+      if (categoryMenuRef.current && !categoryMenuRef.current.contains(target)) {
+        setCategoryMenuOpen(false);
+      }
+      if (sortMenuRef.current && !sortMenuRef.current.contains(target)) {
+        setSortMenuOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, []);
+
   const groupedMenus = menus.reduce<Record<string, Menu[]>>((groups, menu) => {
     const matches = (categoryFilter === "Semua Kategori" || categoryFilter === menu.category)
       && `${menu.item} ${menu.category} ${menu.details}`.toLocaleLowerCase("id").includes(search.trim().toLocaleLowerCase("id"));
@@ -155,260 +136,95 @@ export default function Kategori() {
   }
 
   return (
-    <>
-      <main
-        className="flex min-h-[calc(100vh-58px)] flex-col px-6 pt-[17px] pb-[18px] text-[#594045]
-          max-[980px]:px-[18px]
-          max-[760px]:px-4 max-[760px]:pb-5
-          max-[560px]:px-3
-          max-[390px]:px-2.5"
-      >
-        <div className="mb-1.5 text-[10px] font-medium tracking-wider text-[#74666a]">
-          ADMIN PANEL &nbsp;›&nbsp; KATEGORISASI
-        </div>
-
-        {/* Heading */}
-        <div className="mb-3.5 flex items-start justify-between gap-4 max-[560px]:flex-wrap max-[560px]:gap-2">
-          <div className="max-[560px]:flex-[1_1_100%]">
-            <h1 className="mb-1 text-[21px] leading-[1.3] text-[#594045] max-[760px]:text-[19px] max-[390px]:text-[17px]">
-              Kelola Kategori Toko Pasar Oro-Oro Dowo
-            </h1>
-            <p className="text-[13px] leading-normal text-[#594045] max-[760px]:text-xs max-[390px]:text-[11px]">
-              Kelola klasifikasi struktur kategori, dan penataan lapak pedagang di kawasan Pasar Oro-Oro Dowo Malang demi penataan pasar tradisional bersih berstandar SNI.
-            </p>
+    <AdminLayout activePage="categories" label="Admin Kategori">
+        <main className="page-view active management-view category-management flex min-h-[calc(100vh-58px)] flex-col bg-white px-6 py-[17px] pb-[18px] text-[#594045] max-[760px]:px-4 max-[560px]:px-3 max-[390px]:px-2.5">
+          <div className="mb-2 text-[9px] font-semibold tracking-[0.12em] text-[#74666a]">ADMIN PANEL &nbsp;›&nbsp; KATEGORISASI</div>
+          <div className="mb-4 flex flex-wrap items-start justify-between gap-4 [&_h1]:mb-1 [&_h1]:text-[21px] [&_h1]:leading-[1.3] [&_h1]:text-[#594045] [&_p]:text-[13px] [&_p]:leading-relaxed [&_p]:text-[#594045] max-[760px]:[&_h1]:text-[19px] max-[760px]:[&_p]:text-xs max-[560px]:gap-2"><div><h1>Kelola Kategori Toko Pasar Oro-Oro Dowo</h1><p>Kelola klasifikasi struktur kategori, dan penataan lapak pedagang di kawasan Pasar Oro-Oro Dowo Malang demi penataan pasar tradisional bersih berstandar SNI.</p></div><button className="inline-flex min-h-9 items-center gap-[7px] rounded-[9px] bg-[#c2dc80] px-[13px] py-2 text-xs text-[#594045] shadow-[0_3px_7px_rgba(75,101,21,0.12)] transition-all hover:-translate-y-px hover:bg-[#b5d36b] hover:shadow-[0_5px_10px_rgba(75,101,21,0.16)] focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-[#4b6515] max-[560px]:ml-auto max-[560px]:min-h-8 max-[560px]:px-2.5 max-[560px]:py-[7px] max-[560px]:text-[10px]" type="button" onClick={() => dialogRef.current?.showModal()}><i className="fa-solid fa-plus"/> Tambah Kategori Baru</button></div>
+          <section className="management-summary category-summary mb-4 grid grid-cols-4 gap-3 max-[980px]:grid-cols-2 max-[560px]:grid-cols-1" aria-label="Ringkasan kategori">
+            <article className="summary-card flex min-w-0 items-center justify-between rounded-2xl border border-[#c2dc80]/60 bg-[#edf5d7] p-4 text-[#594045] shadow-sm"><div className="flex min-w-0 flex-col gap-1"><span className="text-[9px] font-bold tracking-wide text-[#4b6515]">TOTAL TOKO</span><strong className="text-xl">251</strong><small className="text-[10px] text-[#74666a]">251 Aktif • bulan ini</small></div><i className="fa-solid fa-store text-lg text-[#4b6515]" /></article>
+            <article className="summary-card amber flex min-w-0 items-center justify-between rounded-2xl border border-[#fbbf24]/40 bg-[#fff0c2] p-4 text-[#594045] shadow-sm"><div className="flex min-w-0 flex-col gap-1"><span className="text-[9px] font-bold tracking-wide text-[#4b6515]">TOTAL KATEGORI</span><strong className="text-xl">6 <small className="text-[10px] font-normal">kategori aktif</small></strong><small className="text-[10px] text-[#74666a]">Zonasi Standar Revitalisasi SNI</small></div><i className="fa-solid fa-shop text-lg text-[#4b6515]" /></article>
+            <article className="summary-card flex min-w-0 items-center justify-between rounded-2xl border border-[#c2dc80]/60 bg-[#edf5d7] p-4 text-[#594045] shadow-sm"><div className="flex min-w-0 flex-col gap-1"><span className="text-[9px] font-bold tracking-wide text-[#4b6515]">KATEGORI DOMINAN</span><strong className="summary-word text-xl">Makanan</strong><small className="text-[10px] text-[#74666a]">(46%) • 36 Toko &amp; Jajanan Tradisional</small></div><i className="fa-solid fa-utensils text-lg text-[#4b6515]" /></article>
+            <article className="summary-card amber flex min-w-0 items-center justify-between rounded-2xl border border-[#fbbf24]/40 bg-[#fff0c2] p-4 text-[#594045] shadow-sm"><div className="flex min-w-0 flex-col gap-1"><span className="text-[9px] font-bold tracking-wide text-[#4b6515]">OKUPANSI ZONASI</span><strong className="text-xl">92% <small className="text-[10px] font-normal">Lapak Terisi</small></strong><small className="occupancy-meter h-1.5 w-full overflow-hidden rounded-full bg-white"><i className="block h-full w-[92%] rounded-full bg-[#4b6515]" /></small></div><i className="fa-solid fa-store text-lg text-[#4b6515]" /></article>
+          </section>
+          <div className="management-toolbar category-toolbar mb-3 flex flex-wrap items-center gap-2">
+            <label className="inline-flex min-h-[60px] w-full min-w-0 flex-[1_1_300px] items-center gap-0 rounded-[18px] border border-[rgba(251,191,36,0.18)] bg-[#ffe4a1] px-4 py-[10px] text-[#4b6515] shadow-[0_3px_8px_rgba(75,101,21,0.04)] focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[rgba(75,101,21,0.45)] max-[560px]:min-h-[52px] max-[560px]:rounded-[14px] max-[560px]:px-[11px] max-[560px]:py-2"><i className="fa-solid fa-magnifying-glass grid h-9 w-9 shrink-0 place-items-center rounded-l-full bg-white p-0 text-xs text-[#4b6515] max-[560px]:h-[34px] max-[560px]:w-8"/><input className="h-9 min-w-0 max-w-full flex-[0_1_340px] rounded-r-full bg-white px-3 py-0 text-[10px] text-[#594045] outline-none placeholder:text-[#9c9695] max-[560px]:h-[34px] max-[560px]:flex-1 max-[560px]:text-[10px]" type="search" placeholder="Cari kategori, nama toko, blok..." aria-label="Cari kategori" value={search} onChange={(event) => setSearch(event.target.value)}/></label>
+            <div ref={categoryMenuRef} className="relative inline-flex min-w-[160px] items-center">
+              <button type="button" className="flex h-9 max-w-full items-center gap-2 rounded-lg border border-[#c2dc80]/70 bg-white px-3 py-2 text-left text-[10px] text-[#594045] shadow-[0_1px_0_rgba(255,255,255,0.7)] focus:outline-2 focus:outline-[#4b6515]" onClick={() => setCategoryMenuOpen((current) => !current)} aria-expanded={categoryMenuOpen} aria-haspopup="listbox">
+                <span className="flex-1 whitespace-nowrap">{categoryFilter}</span>
+                <span className="grid h-5 w-5 place-items-center rounded-full bg-[#edf5d7] text-[9px] text-[#4b6515]"><i className="fa-solid fa-chevron-down" /></span>
+              </button>
+              {categoryMenuOpen && (
+                <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-20 overflow-hidden rounded-[12px] border border-[#dfecc4] bg-[#f8faf2] p-1.5 shadow-[0_8px_24px_rgba(75,101,21,0.08)]" role="listbox" aria-label="Pilih kategori">
+                  {[
+                    "Semua Kategori",
+                    ...new Set(menus.map((menu) => menu.category)),
+                  ].map((category) => {
+                    const selected = categoryFilter === category;
+                    return (
+                      <button key={category} type="button" className={`flex w-full items-center justify-between rounded-[10px] px-3 py-2 text-left text-[10px] transition ${selected ? "bg-[#eaf3d4] text-[#3e4f1a]" : "text-[#594045] hover:bg-[#edf5d7]"}`} onClick={() => { setCategoryFilter(category); setCategoryMenuOpen(false); }} role="option" aria-selected={selected}>
+                        <span>{category}</span>
+                        {selected && <span className="h-2.5 w-2.5 rounded-full bg-[#4b6515]" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            <div ref={sortMenuRef} className="relative inline-flex min-w-[170px] items-center">
+              <button type="button" className="flex h-9 max-w-full items-center gap-2 rounded-lg border border-[#c2dc80]/70 bg-white px-3 py-2 text-left text-[10px] text-[#594045] shadow-[0_1px_0_rgba(255,255,255,0.7)] focus:outline-2 focus:outline-[#4b6515]" onClick={() => setSortMenuOpen((current) => !current)} aria-haspopup="listbox" aria-expanded={sortMenuOpen}>
+                <span className="flex-1 whitespace-nowrap">{sortOption}</span>
+                <span className="grid h-5 w-5 place-items-center rounded-full bg-[#edf5d7] text-[9px] text-[#4b6515]"><i className="fa-solid fa-chevron-down" /></span>
+              </button>
+              {sortMenuOpen && (
+                <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-20 overflow-hidden rounded-[12px] border border-[#dfecc4] bg-[#f8faf2] p-1.5 shadow-[0_8px_24px_rgba(75,101,21,0.08)]" role="listbox" aria-label="Urutkan kategori">
+                  {[
+                    "Urutkan: Toko Terbanyak",
+                    "Urutkan: A-Z",
+                  ].map((option) => {
+                    const selected = sortOption === option;
+                    return (
+                      <button key={option} type="button" className={`flex w-full items-center justify-between rounded-[10px] px-3 py-2 text-left text-[10px] transition ${selected ? "bg-[#eaf3d4] text-[#3e4f1a]" : "text-[#594045] hover:bg-[#edf5d7]"}`} onClick={() => { setSortOption(option); setSortMenuOpen(false); }} role="option" aria-selected={selected}>
+                        <span>{option}</span>
+                        {selected && <span className="h-2.5 w-2.5 rounded-full bg-[#4b6515]" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            <button className="category-tool-button inline-flex min-h-9 items-center gap-2 rounded-lg border border-[#c2dc80]/70 bg-white px-3 text-[10px] font-semibold text-[#4b6515] hover:bg-[#edf5d7]" type="button"><i className="fa-solid fa-table-cells" /> Kelola Kategori</button>
+            <button className="category-tool-button inline-flex min-h-9 items-center gap-2 rounded-lg border border-[#c2dc80]/70 bg-white px-3 text-[10px] font-semibold text-[#4b6515] hover:bg-[#edf5d7]" type="button"><i className="fa-solid fa-table" /> Tabel Detail</button>
           </div>
-          <button
-            className={`${addButton} max-[560px]:ml-auto max-[560px]:min-h-8 max-[560px]:px-2.5 max-[560px]:py-[7px] max-[560px]:text-[10px]`}
-            type="button"
-            onClick={() => dialogRef.current?.showModal()}
-          >
-            <i className="fa-solid fa-plus" /> Tambah Kategori Baru
-          </button>
-        </div>
-
-        {/* Ringkasan */}
-        <section
-          className="mb-3 grid grid-cols-4 gap-3 max-[980px]:grid-cols-2 max-[560px]:grid-cols-1"
-          aria-label="Ringkasan kategori"
-        >
-          {summaries.map((s) => (
-            <article
-              key={s.label}
-              className={`flex items-center justify-between gap-3 rounded-[13px] border px-4 py-3 shadow-[0_3px_8px_rgba(75,101,21,0.05)]
-                ${s.amber
-                  ? "border-[rgba(251,191,36,0.3)] bg-[#ffe5a0]"
-                  : "border-[rgba(194,220,128,0.65)] bg-[#edf5d7]"}`}
-            >
-              <div className="flex min-w-0 flex-1 flex-col gap-[3px]">
-                <span className="text-[10px] font-semibold tracking-wide text-[#594045]">{s.label}</span>
-                <strong className="text-lg font-bold text-[#594045]">
-                  {s.value}
-                  {s.unit && <small className="ml-1 text-[10px] font-normal text-[#74666a]">{s.unit}</small>}
-                </strong>
-                {s.meter !== undefined ? (
-                  <progress
-                    className="block h-1.5 w-full appearance-none rounded-full bg-white/70 accent-[#4b6515] [&::-webkit-progress-bar]:rounded-full [&::-webkit-progress-bar]:bg-white/70 [&::-webkit-progress-value]:rounded-full [&::-webkit-progress-value]:bg-[#4b6515] [&::-moz-progress-bar]:rounded-full [&::-moz-progress-bar]:bg-[#4b6515]"
-                    max={100}
-                    value={Math.min(100, Math.max(0, s.meter))}
-                    aria-label={`${s.label}: ${s.meter}%`}
-                  />
-                ) : (
-                  <small className="text-[9px] text-[#74666a]">{s.note}</small>
-                )}
-              </div>
-              <i
-                className={`fa-solid ${s.icon} grid size-9 shrink-0 place-items-center rounded-full text-sm text-[#4b6515]
-                  ${s.amber ? "bg-[#fbbf24]" : "bg-[#c2dc80]"}`}
-              />
-            </article>
-          ))}
-        </section>
-
-        {/* Toolbar */}
-        <div className="mb-3 flex flex-wrap items-center gap-2.5 max-[560px]:mb-2">
-          <label
-            className="mb-0 flex min-h-[60px] w-full min-w-0 items-center rounded-[18px] border border-[rgba(251,191,36,0.18)] bg-[#ffe4a1] px-4 py-2.5
-              text-[#4b6515] shadow-[0_3px_8px_rgba(75,101,21,0.04)]
-              focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[rgba(75,101,21,0.45)]
-              max-[560px]:min-h-[52px] max-[560px]:rounded-[14px] max-[560px]:px-[11px] max-[560px]:py-2"
-          >
-            <i className="fa-solid fa-magnifying-glass grid size-9 shrink-0 place-items-center rounded-l-full bg-white text-xs text-[#4b6515] max-[560px]:h-[34px] max-[560px]:w-8" />
-            <input
-              className="m-0 h-9 w-full min-w-0 max-w-[340px] flex-[0_1_340px] rounded-r-full bg-white pr-3 text-[10px] text-[#594045] outline-0 placeholder:text-[#9c9695]
-                max-[560px]:h-[34px] max-[560px]:max-w-full max-[560px]:flex-1"
-              type="search"
-              placeholder="Cari kategori, nama toko, blok..."
-              aria-label="Cari kategori"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
-          </label>
-
-          <label>
-            <span className="sr-only">Filter kategori</span>
-            <select className={toolbarControl} value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}>
-              <option>Semua Kategori</option>
-              {[...new Set(menus.map((menu) => menu.category))].map((category) => (
-                <option key={category}>{category}</option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <span className="sr-only">Urutkan kategori</span>
-            <select className={toolbarControl} defaultValue="Urutkan: Toko Terbanyak">
-              <option>Urutkan: Toko Terbanyak</option>
-              <option>Urutkan: A-Z</option>
-            </select>
-          </label>
-          <button className={toolButton} type="button">
-            <i className="fa-solid fa-table-cells" /> Kelola Kategori
-          </button>
-          <button className={toolButton} type="button">
-            <i className="fa-solid fa-table" /> Tabel Detail
-          </button>
-        </div>
-
-        {/* Grid kategori */}
-        <div
-          className="grid min-w-0 grid-cols-4 items-stretch gap-2.5 pt-3.5 pb-2
-            min-[761px]:max-[980px]:gap-2
-            max-[760px]:grid-cols-2 max-[760px]:gap-3
-            max-[560px]:grid-cols-1 max-[560px]:gap-[11px] max-[560px]:pt-3"
-        >
-          {Object.entries(groupedMenus).map(([category, entries]) => (
-            <section className="min-w-0" key={category}>
-              <h2
-                className="relative z-10 mx-auto -mb-[3px] grid min-h-[30px] w-[min(100%,184px)] place-items-center rounded-xl bg-[#594045] px-2 py-[5px]
-                  text-center text-[11px] font-bold leading-[1.3] text-white max-[560px]:w-[min(100%,220px)]"
-              >
-                <span>{category}</span>
-                <small className="text-[8px] font-normal opacity-80">{entries.length} Toko</small>
-              </h2>
-
-              <div
-                className="min-h-[330px] min-w-0 rounded-[19px] border border-[rgba(194,220,128,0.82)] bg-[#e3efc2] px-3 pt-[42px] pb-4
-                  shadow-[0_5px_14px_rgba(75,101,21,0.07)]
-                  min-[761px]:max-[980px]:px-2
-                  max-[760px]:min-h-[235px] max-[760px]:px-3 max-[760px]:pt-9 max-[760px]:pb-3.5
-                  max-[560px]:min-h-0 max-[560px]:pt-[34px] max-[560px]:pb-2
-                  max-[390px]:px-[9px]"
-              >
-                {entries.map((menu) => {
-                  const selected = selectedIds.has(menu.id);
-                  return (
-                    <div
-                      key={menu.id}
-                      data-menu-id={menu.id}
-                      role="button"
-                      tabIndex={0}
-                      aria-pressed={selected}
-                      onClick={() => toggleSelection(menu.id)}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter" || event.key === " ") {
-                          event.preventDefault();
-                          toggleSelection(menu.id);
-                        }
-                      }}
-                      className={`mb-[13px] flex min-w-0 cursor-pointer items-center gap-2 rounded-[9px] p-1 text-[#594045] transition duration-150
-                        min-[761px]:max-[980px]:gap-1.5 min-[761px]:max-[980px]:p-[3px]
-                        max-[760px]:mb-2.5 max-[560px]:mb-2 ${focusRing}
-                        ${selected
-                          ? "bg-[rgba(251,191,36,0.23)] shadow-[inset_0_0_0_1px_rgba(75,101,21,0.2)]"
-                          : "hover:bg-white/40"}`}
-                    >
-                      <span
-                        className={`grid size-[31px] shrink-0 place-items-center rounded-[10px] text-sm text-[#4b6515] shadow-[0_2px_4px_rgba(75,101,21,0.13)]
-                          min-[761px]:max-[980px]:size-7 min-[761px]:max-[980px]:text-xs
-                          ${menu.leaf ? "bg-[#c2dc80]" : "bg-[#fbbf24]"}`}
-                      >
-                        {menu.icon}
-                      </span>
-                      <span className="min-w-0">
-                        <strong className="mb-0.5 block text-[10px] font-bold leading-[1.35] text-[#594045] [overflow-wrap:anywhere] min-[761px]:max-[980px]:text-[9px]">
-                          {menu.item}
-                        </strong>
-                        <small className="block text-[8px] leading-[1.4] text-[#74666a] [overflow-wrap:anywhere] min-[761px]:max-[980px]:text-[7px]">
-                          • {menu.details}
-                        </small>
-                      </span>
+          <div className="grid min-w-0 grid-cols-4 items-stretch gap-[10px] py-[14px] pb-2 max-[980px]:gap-2 max-[760px]:grid-cols-2 max-[760px]:gap-3">
+            {Object.entries(groupedMenus).map(([category, entries]) => (
+              <section className="min-w-0" key={category}>
+                <h2 className="relative z-[1] mx-auto -mb-[3px] grid min-h-[30px] w-[min(100%,184px)] place-items-center rounded-xl bg-[#594045] px-2 py-[5px] text-center text-[11px] leading-[1.3] font-bold text-white"><span>{category}</span><small className="text-[9px] font-medium opacity-80">{entries.length} Toko</small></h2>
+                <div className="min-h-[330px] min-w-0 rounded-[19px] border border-[rgba(194,220,128,0.82)] bg-[#e3efc2] px-3 pt-[42px] pb-4 shadow-[0_5px_14px_rgba(75,101,21,0.07)] max-[980px]:px-2 max-[760px]:min-h-[235px] max-[760px]:px-3 max-[760px]:pt-9 max-[760px]:pb-[14px]">
+                  {entries.map((menu) => (
+                    <div className={`mb-[13px] flex min-w-0 cursor-pointer items-center gap-2 rounded-[9px] p-1 text-[#594045] transition-colors duration-[140ms] hover:bg-[rgba(255,255,255,0.4)] focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-[#4b6515] max-[980px]:gap-[6px] max-[980px]:p-[3px] max-[760px]:mb-[10px] max-[760px]:gap-2 max-[760px]:p-1 ${selectedIds.has(menu.id) ? "bg-[rgba(251,191,36,0.23)] shadow-[inset_0_0_0_1px_rgba(75,101,21,0.2)]" : ""}`} data-menu-id={menu.id} key={menu.id} role="button" tabIndex={0} aria-selected={selectedIds.has(menu.id)} onClick={() => toggleSelection(menu.id)} onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        toggleSelection(menu.id);
+                      }
+                    }}>
+                      <span className={`grid h-[31px] w-[31px] shrink-0 place-items-center rounded-[10px] bg-[#fbbf24] text-sm text-[#4b6515] shadow-[0_2px_4px_rgba(75,101,21,0.13)] max-[980px]:h-7 max-[980px]:w-7 max-[980px]:text-xs max-[760px]:h-[31px] max-[760px]:w-[31px] max-[760px]:text-sm ${menu.leaf ? "bg-[#c2dc80]" : ""}`}>{menu.icon}</span><span><strong className="mb-0.5 block break-words text-[10px] leading-[1.35] text-[#594045] max-[980px]:text-[9px] max-[760px]:text-[10px]">{menu.item}</strong><small className="block break-words text-[8px] leading-[1.4] text-[#74666a] max-[980px]:text-[7px] max-[760px]:text-[8px]">? {menu.details}</small></span>
                     </div>
-                  );
-                })}
-                <button
-                  className={`mt-1 inline-flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-[9px] border border-dashed border-[rgba(75,101,21,0.35)] px-2 py-1.5 text-[9px] font-semibold text-[#4b6515] transition duration-150 hover:bg-white/40 ${focusRing}`}
-                  type="button"
-                  onClick={() => dialogRef.current?.showModal()}
-                >
-                  <i className="fa-solid fa-plus" /> Tambah Toko
-                </button>
-              </div>
-            </section>
-          ))}
-          {!Object.keys(groupedMenus).length && (
-            <p className="col-span-full p-[18px] text-center text-[11px] text-[#74666a]">Kategori tidak ditemukan.</p>
-          )}
-        </div>
-
-        {/* Aksi bawah */}
-        <div className="mt-auto flex flex-wrap items-center justify-end gap-3 pt-3 pb-0.5 max-[390px]:gap-2 max-[390px]:pt-2.5">
-          <span className="text-[11px] text-[#74666a]" aria-live="polite">
-            {selectedIds.size ? `${selectedIds.size} dipilih` : ""}
-          </span>
-          <span className="mr-auto text-[10px] text-[#74666a]">
-            <i className="fa-solid fa-shield-halved" /> Standardisasi Tata Ruang Zonasi Pasar Oro-Oro Dowo
-          </span>
-          <button
-            className={`inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-[7px] bg-[#edf5d7] px-3 py-[7px] text-xs font-semibold text-[#4b6515] transition duration-150 hover:bg-[#e3efc2] ${focusRing}`}
-            type="button"
-          >
-            <i className="fa-solid fa-download" /> Simpan Struktur Urutan
-          </button>
-          <button
-            className={`inline-flex min-h-9 min-w-[120px] cursor-pointer items-center justify-center gap-2 rounded-[7px] border-0 bg-[#c2dc80] px-3 py-[7px] text-xs font-semibold text-[#594045]
-              shadow-[0_3px_7px_rgba(75,101,21,0.12)] transition duration-150
-              enabled:hover:bg-[#b5d36b] enabled:hover:shadow-[0_5px_10px_rgba(75,101,21,0.16)]
-              disabled:cursor-not-allowed disabled:bg-[#e7edda] disabled:text-[#74666a]
-              max-[390px]:min-h-[34px] max-[390px]:min-w-[112px] max-[390px]:px-[9px] max-[390px]:py-1.5 max-[390px]:text-[11px] ${focusRing}`}
-            type="button"
-            disabled={!selectedIds.size}
-            onClick={deleteSelected}
-          >
-            <i className="fa-solid fa-trash-can" /> Hapus Toko
-          </button>
-        </div>
-      </main>
-
-      {/* Dialog tambah kategori */}
-      <dialog
-        className="m-auto w-[min(92vw,380px)] rounded-xl border border-[rgba(194,220,128,0.7)] bg-white p-5 text-[#594045] shadow-[0_12px_28px_rgba(28,43,21,0.25)] backdrop:bg-black/40"
-        ref={dialogRef}
-      >
-        <form className="grid gap-3.5" onSubmit={addMenu}>
-          <h2 className="text-base font-semibold">Tambah Kategori Baru</h2>
-          <div className="grid gap-3">
-            <label className="block text-xs font-medium">
-              Nama Kategori
-              <input className={dialogInput} name="category" required />
-            </label>
-            <label className="block text-xs font-medium">
-              Nama Produk/Toko
-              <input className={dialogInput} name="item" required />
-            </label>
+                  ))}
+                  <button className="category-add-item mt-1 inline-flex min-h-8 w-full items-center justify-center gap-2 rounded-lg border border-dashed border-[#4b6515]/35 bg-white/50 text-[10px] font-semibold text-[#4b6515] hover:bg-white" type="button" onClick={() => dialogRef.current?.showModal()}><i className="fa-solid fa-plus" /> Tambah Toko</button>
+                </div>
+              </section>
+            ))}
+            {!Object.keys(groupedMenus).length && <p className="col-span-full p-[18px] text-center text-[11px] text-[#74666a]">Kategori tidak ditemukan.</p>}
           </div>
-          <div className="flex justify-end gap-2">
-            <button
-              className="cursor-pointer rounded-[9px] bg-[#f2f1ec] px-[13px] py-2 text-xs font-semibold text-[#594045] transition duration-150 hover:bg-[#e8e7e0]"
-              type="button"
-              onClick={() => dialogRef.current?.close()}
-            >
-              Batal
-            </button>
-            <button className={addButton} type="submit">
-              Tambah Kategori
-            </button>
-          </div>
+          <div className="mt-auto flex flex-wrap items-center justify-end gap-3 py-3 pb-0.5 max-[560px]:gap-2"><span className="text-[11px] text-[#74666a]" aria-live="polite">{selectedIds.size ? `${selectedIds.size} dipilih` : ""}</span><span className="category-standard hidden items-center gap-2 text-[9px] text-[#74666a] xl:inline-flex"><i className="fa-solid fa-shield-halved text-[#4b6515]" /> Standardisasi Tata Ruang Zonasi Pasar Oro-Oro Dowo</span><button className="category-save-button inline-flex min-h-9 items-center gap-2 rounded-lg border border-[#c2dc80] bg-white px-3 text-[10px] font-semibold text-[#4b6515] hover:bg-[#edf5d7]" type="button"><i className="fa-solid fa-download" /> Simpan Struktur Urutan</button><button className="inline-flex min-h-9 min-w-[120px] items-center justify-center gap-2 rounded-md border-0 bg-[#c2dc80] px-3 py-[7px] text-xs font-semibold text-[#594045] shadow-[0_3px_7px_rgba(75,101,21,0.12)] transition-all hover:bg-[#b5d36b] hover:shadow-[0_5px_10px_rgba(75,101,21,0.16)] focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-[#4b6515] disabled:cursor-not-allowed disabled:bg-[#e7edda] disabled:text-[#74666a]" type="button" disabled={!selectedIds.size} onClick={deleteSelected}><i className="fa-solid fa-trash-can"/> Hapus Toko</button></div>
+        </main>
+      <dialog className="m-auto max-h-[90vh] max-w-[min(92vw,420px)] rounded-2xl border border-[rgba(194,220,128,0.7)] bg-white text-[#594045] shadow-2xl backdrop:bg-black/40" ref={dialogRef}>
+        <form className="create-form w-[min(92vw,420px)] space-y-4 p-6" onSubmit={addMenu}>
+          <h2 className="text-lg font-bold text-[#594045]">Tambah Kategori Baru</h2>
+          <div className="create-fields grid gap-3 [&_input]:rounded-lg [&_input]:border [&_input]:border-[rgba(194,220,128,0.75)] [&_input]:p-2 [&_input]:text-[#594045] [&_input:focus]:border-[#4b6515] [&_input:focus]:outline-2 [&_input:focus]:outline-[rgba(194,220,128,0.45)]"><label className="grid gap-1 text-xs font-semibold">Nama Kategori<input className="rounded-lg border border-[rgba(194,220,128,0.75)] p-2 text-[#594045] focus:border-[#4b6515] focus:outline-2 focus:outline-[rgba(194,220,128,0.45)]" name="category" required/></label><label className="grid gap-1 text-xs font-semibold">Nama Produk/Toko<input className="rounded-lg border border-[rgba(194,220,128,0.75)] p-2 text-[#594045] focus:border-[#4b6515] focus:outline-2 focus:outline-[rgba(194,220,128,0.45)]" name="item" required/></label></div>
+          <div className="create-actions flex justify-end gap-2"><button className="cancel-button rounded-lg bg-[#f2f1ec] px-4 py-2 text-xs text-[#594045] hover:bg-[#e7e5dc] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4b6515]" type="button" onClick={() => dialogRef.current?.close()}>Batal</button><button className="add-button rounded-lg bg-[#c2dc80] px-4 py-2 text-xs font-semibold text-[#594045] hover:bg-[#b5d36b] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4b6515]" type="submit">Tambah Kategori</button></div>
         </form>
       </dialog>
-    </>
+    </AdminLayout>
   );
 }

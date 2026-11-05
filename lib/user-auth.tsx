@@ -31,11 +31,13 @@ export function canAccessPath(role: UserRole, pathname: string) {
 
   const normalizedPath = pathname.toLowerCase().replace(/%20/g, " ");
   return [
+    "/dashboard",
     "/kelola-toko",
     "/kelola toko",
     "/kelola-promo",
     "/kelola promo",
     "/penjual",
+    "/pengaturan",
   ].includes(normalizedPath);
 }
 
@@ -106,7 +108,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const data = await apiRequest<ApiAuthResponse>("/api/auth/register", {
         method: "POST",
-        body: { ...input, name: input.name.trim(), email: input.email.trim() },
+        body: {
+          ...input,
+          name: input.name.trim(),
+          email: input.email.trim(),
+          role: input.role ?? "seller",
+        },
       });
       const user = toAuthUser(data.user);
       setCurrentUser(user);

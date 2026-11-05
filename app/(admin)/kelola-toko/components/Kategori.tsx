@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useAuth } from "../../../../lib/user-auth";
 
 type Store = {
   id: string;
@@ -40,7 +41,7 @@ const nav = [
   { label: "Kategori", icon: "fa-sitemap", href: "/kategori" },
   { label: "Kelola Promo", icon: "fa-tags", href: "/kelola-promo" },
   { label: "Pengguna", icon: "fa-user-group", href: "/pengguna" },
-  { label: "Penjual", icon: "fa-shop", href: "/Penjual" },
+  { label: "Penjual", icon: "fa-shop", href: "/penjual" },
   { label: "Pengaturan", icon: "fa-gear", href: "/pengaturan" },
 ];
 
@@ -50,9 +51,11 @@ const select =
 const cols = "grid grid-cols-[24px_minmax(0,2.4fr)_minmax(0,1.1fr)_minmax(0,1.1fr)_minmax(0,1.1fr)_minmax(0,1.2fr)_90px] items-center gap-3";
 
 export default function KelolaToko() {
+  const { currentUser } = useAuth();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
   const [selected, setSelected] = useState<string[]>(["s1"]);
+  const roleLabel = currentUser?.role === "seller" ? "Penjual" : "Admin";
 
   const visible = useMemo(
     () =>
@@ -114,8 +117,8 @@ export default function KelolaToko() {
           </button>
           <div className="flex items-center gap-2 rounded-full bg-white px-2.5 py-1 shadow-[0_2px_6px_rgba(75,101,21,0.08)]">
             <div className="text-right leading-tight">
-              <p className="text-[9px] font-bold text-[#2f3a1f]">Rani</p>
-              <p className="text-[7px] text-[#6b7a45]">Super Admin</p>
+              <p className="text-[9px] font-bold text-[#2f3a1f]">{currentUser?.username ?? "Admin"}</p>
+              <p className="text-[7px] text-[#6b7a45]">{roleLabel}</p>
             </div>
             <span className="grid size-5 place-items-center rounded-full bg-[#2f6b1a] text-white">
               <i className="fa-solid fa-user text-[8px]" />

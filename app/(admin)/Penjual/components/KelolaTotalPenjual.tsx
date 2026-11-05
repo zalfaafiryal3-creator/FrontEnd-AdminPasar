@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import TambahPedagangBaru from "../../../penjual/components/TambahPedagangBaru";
-import type { PedagangData } from "../../../penjual/components/TambahPedagangBaru";
+import TambahPedagangBaru from "./TambahPedagangBaru";
+import type { PedagangData } from "./TambahPedagangBaru";
 
 const summaries = [
   {

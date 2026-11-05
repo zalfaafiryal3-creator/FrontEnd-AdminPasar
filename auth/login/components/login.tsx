@@ -256,7 +256,7 @@ export default function Login() {
                   type="button"
                   onClick={() =>
                     setForgotMessage(
-                      "Silakan hubungi Super Admin untuk mengatur ulang kata sandi.",
+                      "Silakan hubungi Admin untuk mengatur ulang kata sandi.",
                     )
                   }
                   className={`font-semibold text-[#4b6515] underline underline-offset-2 ${focusRing}`}

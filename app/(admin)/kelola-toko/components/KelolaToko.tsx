@@ -1,5 +1,5 @@
-import AdminLayout from "../../../components/AdminLayout";
-import ManagementTable, { type ManagementTableConfig } from "../../../components/ManagementTable";
+import AdminLayout from "../../../../components/AdminLayout";
+import ManagementTable, { type ManagementTableConfig } from "../../../../components/ManagementTable";
 import TambahTokoBaru, { type TokoData } from "./TambahTokoBaru";
 
 const config: ManagementTableConfig = {

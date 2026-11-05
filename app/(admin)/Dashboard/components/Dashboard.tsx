@@ -1,8 +1,8 @@
-import { useAuth } from "../../../lib/user-auth";
-import AdminLayout from "../../../components/AdminLayout";
+import { useAuth } from "../../../../lib/user-auth";
+import AdminLayout from "../../../../components/AdminLayout";
 import Peringkat from "./peringkat";
 import PromoAktif from "./PromoAktif";
-import { StatCards, CapacityPanel } from "./Ringkasanaktifitas";
+import { StatCards, CapacityPanel } from "./RingkasanAktifitas";
 import RiwayatAktivitas from "./RiwayatAktifitas";
 
 export default function Dashboard() {

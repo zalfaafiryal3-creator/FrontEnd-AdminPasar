@@ -23,11 +23,13 @@ export function canAccessPath(role: UserRole, pathname: string) {
 
   const normalizedPath = pathname.toLowerCase().replace(/%20/g, " ");
   return [
+    "/dashboard",
     "/kelola-toko",
     "/kelola toko",
     "/kelola-promo",
     "/kelola promo",
     "/penjual",
+    "/pengaturan",
   ].includes(normalizedPath);
 }
 

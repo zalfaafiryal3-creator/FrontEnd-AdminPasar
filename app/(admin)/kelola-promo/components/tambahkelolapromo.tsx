@@ -4,7 +4,7 @@ import { useState, useRef, type ChangeEvent, type FormEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import AdminLayout from "../../../components/AdminLayout";
+import AdminLayout from "../../../../components/AdminLayout";
 
 export type PromoData = {
   id?: string;

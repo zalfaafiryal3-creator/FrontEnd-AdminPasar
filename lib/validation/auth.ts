@@ -35,6 +35,7 @@ export function validateRegister(input: {
   email: string;
   password: string;
   confirmPassword: string;
+  role?: "admin" | "seller";
 }): string[] {
   const errors: string[] = [];
 
@@ -43,6 +44,10 @@ export function validateRegister(input: {
 
   const emailError = validateEmail(input.email);
   if (emailError) errors.push(emailError);
+
+  if (input.role && !["admin", "seller"].includes(input.role)) {
+    errors.push("Kategori tidak valid.");
+  }
 
   errors.push(...validatePasswordRules(input.password));
 
