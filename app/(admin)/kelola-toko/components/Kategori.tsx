@@ -1,10 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import Image from "next/image";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "../../../../lib/user-auth";
+import { getManagedStores, type Store as ManagedStore } from "../../../../lib/store-api";
 
-type Store = {
+type StoreCard = {
   id: string;
   name: string;
   handle: string;
@@ -15,18 +17,36 @@ type Store = {
   category: string;
   rating: string;
   sold: string;
+  logoUrl: string | null;
+  status: ManagedStore["status"];
   verified?: boolean;
   thumb: { icon: string; bg: string; fg: string };
 };
 
-const stores: Store[] = [
-  { id: "s1", name: "Kue Lumpur Kentang Bu Sri", handle: "@lumpurkentang_asli", block: "Blok A-04", area: "Kios Barat", owner: "Budi Santoso", phone: "+62 812-3341-9011", category: "Makanan & Jajanan", rating: "4.8", sold: "1.240 terjual", verified: true, thumb: { icon: "fa-cookie-bite", bg: "bg-[#4a2e1b]", fg: "text-[#f3c969]" } },
-  { id: "s2", name: "Klepon Ku", handle: "@keponmaknyus", block: "Blok A-12", area: "Sentra Jajanan", owner: "Siti Aminah", phone: "+62 821-4567-8890", category: "Makanan & Jajanan", rating: "4.9", sold: "3.890 terjual", thumb: { icon: "fa-bowl-food", bg: "bg-[#3b3a35]", fg: "text-[#9bd16b]" } },
-  { id: "s3", name: "Kios Sayur Segar Bu Sri", handle: "@sayurbusri_orodoro", block: "Blok B-08", area: "Kios Sayuran", owner: "Sri Wahyuni", phone: "+62 857-1902-3344", category: "Sayur & Buah", rating: "4.7", sold: "890 pesanan", thumb: { icon: "fa-leaf", bg: "bg-[#e3f3c8]", fg: "text-[#4b9a22]" } },
-  { id: "s4", name: "Ayam Potong Pak Slamet", handle: "@ayampakslamet", block: "Blok C-02", area: "Kios Daging & Ikan", owner: "Slamet Riyadi", phone: "+62 813-9871-2099", category: "Daging & Ikan", rating: "4.6", sold: "712 pesanan", thumb: { icon: "fa-drumstick-bite", bg: "bg-[#fde4e4]", fg: "text-[#d6453d]" } },
-  { id: "s5", name: "Bakso Goreng Bangkit", handle: "@baksogoreng_oro", block: "Blok A-10", area: "Sentra Kuliner", owner: "Joko Prasetyo", phone: "+62 822-7711-4050", category: "Makanan & Jajanan", rating: "4.9", sold: "2.410 terjual", verified: true, thumb: { icon: "fa-utensils", bg: "bg-[#2f2a24]", fg: "text-[#f5a524]" } },
-  { id: "s6", name: "Jamu Tradisional Bu Darto", handle: "@jamubudarto", block: "Blok B-15", area: "Kios Rempah", owner: "Darto Mulyono", phone: "+62 819-0331-5544", category: "Herbal & Minuman", rating: "4.8", sold: "640 botol", thumb: { icon: "fa-mortar-pestle", bg: "bg-[#efe6d4]", fg: "text-[#6b5a3a]" } },
-];
+const storeLogoStyle = {
+  icon: "fa-store",
+  bg: "bg-[#ffe9b0]",
+  fg: "text-[#c38a00]",
+};
+
+function toStoreCard(store: ManagedStore): StoreCard {
+  return {
+    id: String(store.id),
+    name: store.name,
+    handle: `@${store.slug}`,
+    block: store.zone || "Lokasi belum diatur",
+    area: store.zone || "Lokasi belum diatur",
+    owner: store.owner || "—",
+    phone: store.phone || "—",
+    category: store.category,
+    rating: store.rating.toFixed(1),
+    sold: `${store.productCount} produk`,
+    logoUrl: store.logoUrl,
+    status: store.status,
+    verified: store.status === "buka",
+    thumb: storeLogoStyle,
+  };
+}
 
 const summaries = [
   { label: "TOTAL TOKO", value: "251", unit: "", icon: "fa-store", iconBg: "bg-[#ffe9b0]", iconFg: "text-[#c38a00]", footer: "dot" as const },
@@ -52,10 +72,35 @@ const cols = "grid grid-cols-[24px_minmax(0,2.4fr)_minmax(0,1.1fr)_minmax(0,1.1f
 
 export default function KelolaToko() {
   const { currentUser } = useAuth();
+  const [stores, setStores] = useState<StoreCard[]>([]);
+  const [isLoadingStores, setIsLoadingStores] = useState(true);
+  const [storesError, setStoresError] = useState("");
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
-  const [selected, setSelected] = useState<string[]>(["s1"]);
+  const [selected, setSelected] = useState<string[]>([]);
   const roleLabel = currentUser?.role === "seller" ? "Penjual" : "Admin";
+
+  useEffect(() => {
+    let isCurrent = true;
+    getManagedStores()
+      .then((managedStores) => {
+        if (isCurrent) setStores(managedStores.map(toStoreCard));
+      })
+      .catch((error: unknown) => {
+        if (isCurrent) {
+          setStoresError(
+            error instanceof Error ? error.message : "Daftar toko gagal dimuat.",
+          );
+        }
+      })
+      .finally(() => {
+        if (isCurrent) setIsLoadingStores(false);
+      });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, []);
 
   const visible = useMemo(
     () =>
@@ -64,7 +109,7 @@ export default function KelolaToko() {
           `${s.name} ${s.owner} ${s.block}`.toLowerCase().includes(search.toLowerCase()) &&
           (!category || s.category === category),
       ),
-    [search, category],
+    [stores, search, category],
   );
 
   const toggle = (id: string) =>
@@ -250,10 +295,20 @@ export default function KelolaToko() {
                       />
 
                       <div className="flex min-w-0 items-center gap-2.5">
-                        {/* Ganti dengan <img src=... className="size-[26px] rounded-md object-cover" /> bila ada foto */}
-                        <span className={`grid size-[26px] shrink-0 place-items-center rounded-md text-[11px] ${s.thumb.bg} ${s.thumb.fg}`}>
-                          <i className={`fa-solid ${s.thumb.icon}`} />
-                        </span>
+                        {s.logoUrl ? (
+                          <Image
+                            src={s.logoUrl}
+                            alt={`Logo ${s.name}`}
+                            width={26}
+                            height={26}
+                            unoptimized
+                            className="size-[26px] shrink-0 rounded-md object-cover"
+                          />
+                        ) : (
+                          <span className={`grid size-[26px] shrink-0 place-items-center rounded-md text-[11px] ${s.thumb.bg} ${s.thumb.fg}`}>
+                            <i className={`fa-solid ${s.thumb.icon}`} />
+                          </span>
+                        )}
                         <div className="min-w-0">
                           <p className="flex items-center gap-1 text-[10px] font-bold leading-tight text-[#1f2a10]">
                             <span className="truncate">{s.name}</span>
@@ -287,8 +342,9 @@ export default function KelolaToko() {
                         <p className="mt-0.5">{s.sold}</p>
                       </div>
 
-                      <span className="inline-flex w-fit items-center gap-1 rounded-full bg-[#dff5e1] px-2 py-1 text-[8px] font-semibold leading-tight text-[#1f7a35]">
-                        <i className="fa-solid fa-circle-check text-[9px]" /> Aktif /<br className="hidden" /> Terverifikasi
+                      <span className={`inline-flex w-fit items-center gap-1 rounded-full px-2 py-1 text-[8px] font-semibold leading-tight ${s.status === "buka" ? "bg-[#dff5e1] text-[#1f7a35]" : s.status === "tutup" ? "bg-[#ffe5e5] text-[#a12b2b]" : "bg-[#fff0c2] text-[#8a5a00]"}`}>
+                        <i className={`fa-solid ${s.status === "buka" ? "fa-circle-check" : s.status === "tutup" ? "fa-circle-xmark" : "fa-clock"} text-[9px]`} />
+                        {s.status === "buka" ? "Aktif / Terverifikasi" : s.status === "tutup" ? "Tutup" : "Menunggu Verifikasi"}
                       </span>
 
                       <div className="flex items-center justify-center gap-3 text-[11px] text-[#2f3a1f]">
@@ -298,7 +354,13 @@ export default function KelolaToko() {
                       </div>
                     </article>
                   ))}
-                  {!visible.length && (
+                  {storesError && (
+                    <p className="rounded-lg bg-white/70 p-4 text-center text-[10px] text-red-700" role="alert">{storesError}</p>
+                  )}
+                  {isLoadingStores && (
+                    <p className="rounded-lg bg-white/70 p-4 text-center text-[10px] text-[#5b6a35]">Memuat daftar toko...</p>
+                  )}
+                  {!isLoadingStores && !storesError && !visible.length && (
                     <p className="rounded-lg bg-white/70 p-4 text-center text-[10px] text-[#5b6a35]">Toko tidak ditemukan.</p>
                   )}
                 </div>

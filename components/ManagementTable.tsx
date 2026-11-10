@@ -97,12 +97,17 @@ export default function ManagementTable<TCustomData = RecordEntry>({
     const saved = readStorage(config.storageKey)
       .map((record) => ({ ...record, id: record.id || crypto.randomUUID() }))
       .filter((record) => !deletedIds.has(record.id));
-    const savedById = new Map(saved.map((record) => [record.id, record]));
+    const savedById = new Map<string, RecordEntry>();
+    saved.forEach((record) => savedById.set(record.id, record));
+    const uniqueSaved = [...savedById.values()];
+    if (uniqueSaved.length !== saved.length) {
+      localStorage.setItem(config.storageKey, JSON.stringify(uniqueSaved));
+    }
     const initial = config.initialRecords
       .filter((record) => !deletedIds.has(record.id))
       .map((record) => ({ ...record, ...savedById.get(record.id) }));
     const initialIds = new Set(initial.map((record) => record.id));
-    return [...initial, ...saved.filter((record) => !initialIds.has(record.id))];
+    return [...initial, ...uniqueSaved.filter((record) => !initialIds.has(record.id))];
   });
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<Record<string, string>>({});
@@ -130,7 +135,10 @@ export default function ManagementTable<TCustomData = RecordEntry>({
 
     const record = data;
     if (!record.id) record.id = crypto.randomUUID();
-    const updated = [...readStorage(config.storageKey), record];
+    const updated = [
+      ...readStorage(config.storageKey).filter((savedRecord) => savedRecord.id !== record.id),
+      record,
+    ];
     localStorage.setItem(config.storageKey, JSON.stringify(updated));
     setLocalRecords((current) => [...current, record]);
     setIsCustomModalOpen(false);

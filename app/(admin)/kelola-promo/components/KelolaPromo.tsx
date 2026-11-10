@@ -1,8 +1,28 @@
+"use client";
+
+import Image from "next/image";
+import { useEffect, useMemo, useState } from "react";
 import AdminLayout from "../../../../components/AdminLayout";
 import ManagementTable, { type ManagementTableConfig } from "../../../../components/ManagementTable";
+import { getManagedStores } from "../../../../lib/store-api";
 import TambahKelolaPromo, { type PromoData } from "./tambahkelolapromo";
 
-const config: ManagementTableConfig = {
+function normalizeStoreName(name: string): string {
+  return name.trim().toLocaleLowerCase("id").replace(/[^a-z0-9]/g, "");
+}
+
+function isHttpImageUrl(value: string | undefined): value is string {
+  if (!value) return false;
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+function createConfig(storeLogos: ReadonlyMap<string, string>): ManagementTableConfig {
+return {
   className: "promo-management",
   tableClass: "promo-table",
   title: "Kelola Promosi Pasar Oro-Oro Dowo",
@@ -36,8 +56,8 @@ const config: ManagementTableConfig = {
       isOpen={isOpen}
       onClose={onClose}
       onSave={(data: PromoData) => {
-        onSave({
-          id: data.id || `promo-${Date.now()}`,
+        return onSave({
+          id: data.id || `promo-${crypto.randomUUID()}`,
           store: data.store,
           owner: "Pedagang Pasar",
           category: data.category.replace("Zona ", ""),
@@ -46,6 +66,7 @@ const config: ManagementTableConfig = {
           requirements: data.terms,
           quota: data.quota || "0 / 100",
           status: data.status,
+          bannerImage: data.bannerImage ?? "",
         });
       }}
     />
@@ -54,9 +75,11 @@ const config: ManagementTableConfig = {
     const quota = record.quota || "0 / 100";
     const [claimed, total] = quota.split("/");
     const quotaPercent = Math.min(100, (Number.parseInt(claimed, 10) / Number.parseInt(total, 10)) * 100);
+    const storeLogo = storeLogos.get(normalizeStoreName(record.store));
+    const imageUrl = isHttpImageUrl(record.bannerImage) ? record.bannerImage : storeLogo;
 
     return <>
-    <td><div className="flex min-w-0 items-center gap-2"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#f8e49f] text-[#4b6515]"><i className="fa-solid fa-store" /></span><span className="min-w-0"><strong className="block text-[11px] leading-snug text-[#594045]">{record.store}</strong><small className="mt-0.5 block break-words text-[9px] leading-snug text-[#74666a]">Camplung • Blok A-04 • @{record.store.toLowerCase().replace(/[^a-z0-9]+/g, "")}</small></span></div></td>
+    <td><div className="flex min-w-0 items-center gap-2"><span className={`relative grid size-9 shrink-0 place-items-center overflow-hidden rounded-xl ${imageUrl ? "bg-white" : "bg-[#f8e49f] text-[#4b6515]"}`}>{imageUrl ? <Image src={imageUrl} alt={`Foto ${record.store}`} fill unoptimized className="object-cover" /> : <i className="fa-solid fa-store" />}</span><span className="min-w-0"><strong className="block text-[11px] leading-snug text-[#594045]">{record.store}</strong><small className="mt-0.5 block break-words text-[9px] leading-snug text-[#74666a]">Camplung • Blok A-04 • @{record.store.toLowerCase().replace(/[^a-z0-9]+/g, "")}</small></span></div></td>
     <td><div className="flex min-w-0 flex-col gap-1 break-words text-[#594045]"><strong>{record.owner}</strong><span className="text-[9px] text-[#74666a]">Zona Makanan</span></div></td>
     <td><span className="inline-flex max-w-full rounded-lg bg-[#d9eaae] px-2.5 py-1 text-[9px] font-semibold text-[#315e20]">{record.category}</span></td>
     <td><span className="inline-flex max-w-full rounded-lg bg-[#594045] px-2.5 py-1.5 text-[9px] font-semibold text-white">{record.discount}</span><small className="mt-1 block text-[8px] text-[#74666a]">KODE: {record.id.slice(-5).toUpperCase()}</small></td>
@@ -66,7 +89,45 @@ const config: ManagementTableConfig = {
   </>;
   },
 };
+}
 
 export default function KelolaPromo() {
-  return <AdminLayout activePage="promos" label="Admin Kelola Promo"><ManagementTable config={config} /></AdminLayout>;
+  const [storeLogos, setStoreLogos] = useState<ReadonlyMap<string, string>>(() => new Map());
+  const [storeLogoError, setStoreLogoError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    getManagedStores()
+      .then((stores) => {
+        if (!active) return;
+        setStoreLogos(new Map(
+          stores.flatMap((store) => store.logoUrl
+            ? [[normalizeStoreName(store.name), store.logoUrl] as const]
+            : []),
+        ));
+        setStoreLogoError("");
+      })
+      .catch((error: unknown) => {
+        if (active) {
+          setStoreLogoError(error instanceof Error ? error.message : "Logo toko gagal dimuat.");
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const config = useMemo(() => createConfig(storeLogos), [storeLogos]);
+
+  return (
+    <AdminLayout activePage="promos" label="Admin Kelola Promo">
+      {storeLogoError && (
+        <p className="px-4 pt-3 text-xs text-red-700" role="alert">
+          Foto logo toko belum dapat dimuat: {storeLogoError}
+        </p>
+      )}
+      <ManagementTable config={config} />
+    </AdminLayout>
+  );
 }

@@ -42,13 +42,13 @@ function toStoreFormValues(data: TokoData): StoreFormValues {
     phone: data.phone,
     email: data.email ?? "",
     description: data.description,
-    bannerImage: null,
-    logoImage: null,
+    bannerImage: data.bannerImage,
+    logoImage: data.logoImage,
     products: data.products.map((product) => ({
       nama: product.nama,
       harga: product.harga,
       deskripsi: product.deskripsi,
-      foto: null,
+      foto: product.foto,
     })),
   };
 }
@@ -70,9 +70,15 @@ function toFormData(store: Store): TokoData {
     phone: store.phone,
     email: store.email,
     description: store.description,
-    bannerImage: null,
-    logoImage: null,
-    products: [],
+    bannerImage: store.bannerUrl,
+    logoImage: store.logoUrl,
+    products: (store.products ?? []).map((p) => ({
+      id: String(p.id),
+      nama: p.name,
+      harga: String(p.price),
+      deskripsi: p.description,
+      foto: p.photoUrl,
+    })),
   };
 }
 
@@ -144,8 +150,6 @@ export default function KelolaToko() {
         { includeStatus: canEditStatus },
       );
       delete request.products;
-      delete request.bannerUrl;
-      delete request.logoUrl;
       await updateStore(store.id, request);
       await loadStores();
       setNotice({ type: "success", message: "Perubahan toko berhasil disimpan." });
@@ -194,6 +198,8 @@ export default function KelolaToko() {
       : store.status === "tutup"
         ? "Tutup / Terverifikasi"
         : "Aktif / Terverifikasi",
+    logoImage: store.logoUrl ?? "",
+    bannerImage: store.bannerUrl ?? "",
   })), [stores]);
 
   const config = useMemo<ManagementTableConfig<TokoData>>(() => {
@@ -231,12 +237,30 @@ export default function KelolaToko() {
           onSave={onSave}
           categoryOptions={categories}
           canEditStatus={canEditStatus}
-          allowPhotoUpload={false}
+          allowPhotoUpload={true}
         />
       ),
       renderRecord: (record, actions) => (
         <>
-          <td><div className="flex min-w-0 items-center gap-2"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#f8e49f] text-[#4b6515]"><i className="fa-solid fa-basket-shopping" /></span><span className="min-w-0"><strong className="block text-xs leading-snug text-[#594045]">{record.store}</strong><small className="mt-0.5 block break-words text-[10px] leading-snug text-[#74666a]">{record.handle} • {record.zone}</small></span></div></td>
+          <td>
+            <div className="flex min-w-0 items-center gap-2">
+              <span className="grid h-10 w-10 shrink-0 overflow-hidden place-items-center rounded-xl bg-[#f8e49f] text-[#4b6515]">
+                {record.logoImage || record.bannerImage ? (
+                  <img
+                    src={record.logoImage || record.bannerImage || ""}
+                    alt={record.store}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <i className="fa-solid fa-basket-shopping" />
+                )}
+              </span>
+              <span className="min-w-0">
+                <strong className="block text-xs leading-snug text-[#594045]">{record.store}</strong>
+                <small className="mt-0.5 block break-words text-[10px] leading-snug text-[#74666a]">{record.handle} • {record.zone}</small>
+              </span>
+            </div>
+          </td>
           <td><div className="flex min-w-0 flex-col gap-1 break-words text-[10px] text-[#594045]"><strong className="text-[11px]">{record.owner}</strong><span>{record.phone}</span><span>{record.email}</span></div></td>
           <td><span className="inline-flex max-w-full rounded-lg bg-[#d9eaae] px-2.5 py-1 text-[10px] font-semibold text-[#315e20]">{record.category}</span></td>
           <td><span className="whitespace-nowrap text-[13px] font-bold text-amber-600">{record.rating === "—" ? "★ —" : `★ ${record.rating}`}</span><small className="mt-1 block text-[9px] text-[#74666a]">{record.transactions}</small></td>
@@ -323,7 +347,7 @@ export default function KelolaToko() {
           initialData={toFormData(editingStore)}
           categoryOptions={categories}
           canEditStatus={canEditStatus}
-          allowPhotoUpload={false}
+          allowPhotoUpload={true}
           onClose={() => setEditingStore(null)}
           onSave={(data) => saveEditedStore(editingStore, data)}
         />

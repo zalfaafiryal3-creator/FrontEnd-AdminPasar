@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, type ChangeEvent, type FormEvent } from "react";
 import Image from "next/image";
+import { uploadImageToCloudinary } from "../../../../lib/api";
 
 export type MenuItem = {
   id: string;
@@ -58,7 +59,7 @@ export default function TambahTokoBaru({
   initialData,
   isEditing = false,
   canEditStatus = false,
-  allowPhotoUpload = false,
+  allowPhotoUpload = true,
   isPageMode = false,
 }: TambahTokoBaruProps) {
   // 1. Informasi Utama
@@ -75,7 +76,9 @@ export default function TambahTokoBaru({
 
   // 3. Media & Visual
   const [bannerPreview, setBannerPreview] = useState<string | null>(initialData?.bannerImage ?? null);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(initialData?.logoImage ?? null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
@@ -92,10 +95,12 @@ export default function TambahTokoBaru({
     deskripsi: "",
     foto: null,
   }]);
+  const [menuItemFiles, setMenuItemFiles] = useState<Record<string, File>>({});
 
   // UI state
   const [errorMsg, setErrorMsg] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadingStatus, setUploadingStatus] = useState("");
 
   useEffect(() => {
     if (!initialData && categoryOptions.length > 0 && !categoryOptions.some((category) => category.name === kategori)) {
@@ -114,26 +119,29 @@ export default function TambahTokoBaru({
     setJamTutup("17:00");
     setTahunBerdiri("");
     setBannerPreview(null);
+    setBannerFile(null);
     setLogoPreview(null);
+    setLogoFile(null);
     setTelepon("");
     setEmail("");
     setDeskripsi("");
     setMenuItems([{ id: "item-1", nama: "", harga: "", deskripsi: "", foto: null }]);
+    setMenuItemFiles({});
     setErrorMsg("");
     setIsSubmitting(false);
+    setUploadingStatus("");
   }, [canEditStatus, categoryOptions, isOpen, initialData]);
 
   // Handle Banner Upload
   const handleBannerChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 3 * 1024 * 1024) {
-        alert("Ukuran banner maksimal 3MB");
+      if (file.size > 5 * 1024 * 1024) {
+        alert("Ukuran banner maksimal 5MB");
         return;
       }
-      const reader = new FileReader();
-      reader.onload = () => setBannerPreview(reader.result as string);
-      reader.readAsDataURL(file);
+      setBannerFile(file);
+      setBannerPreview(URL.createObjectURL(file));
     }
   };
 
@@ -141,13 +149,12 @@ export default function TambahTokoBaru({
   const handleLogoChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        alert("Ukuran logo maksimal 2MB");
+      if (file.size > 5 * 1024 * 1024) {
+        alert("Ukuran logo maksimal 5MB");
         return;
       }
-      const reader = new FileReader();
-      reader.onload = () => setLogoPreview(reader.result as string);
-      reader.readAsDataURL(file);
+      setLogoFile(file);
+      setLogoPreview(URL.createObjectURL(file));
     }
   };
 
@@ -182,11 +189,12 @@ export default function TambahTokoBaru({
   const handleMenuPhotoChange = (id: string, e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        handleUpdateMenuItem(id, "foto", reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      if (file.size > 5 * 1024 * 1024) {
+        alert("Ukuran foto produk maksimal 5MB");
+        return;
+      }
+      setMenuItemFiles((prev) => ({ ...prev, [id]: file }));
+      handleUpdateMenuItem(id, "foto", URL.createObjectURL(file));
     }
   };
 
@@ -220,34 +228,66 @@ export default function TambahTokoBaru({
       .replace(/[^a-z0-9]/g, "")
       .slice(0, 15) || "toko"}`;
 
-    const newStoreData: TokoData = {
-      id: `store-${Date.now()}`,
-      store: namaToko.trim(),
-      owner: namaPemilik.trim(),
-      category: kategori,
-      zone: nomorBlok.trim(),
-      status: statusKios,
-      operatingHours: `${jamBuka} - ${jamTutup}`,
-      establishedYear: tahunBerdiri.trim(),
-      phone: telepon.trim(),
-      email: email.trim(),
-      description: deskripsi.trim(),
-      bannerImage: bannerPreview,
-      logoImage: logoPreview,
-      products: menuItems.filter((m) => m.nama.trim() !== ""),
-      handle: generatedHandle,
-      rating: "5.0",
-      transactions: "0",
-    };
-
     setIsSubmitting(true);
     try {
+      let finalBannerUrl = bannerPreview;
+      if (bannerFile) {
+        setUploadingStatus("Mengunggah foto banner ke Cloudinary...");
+        finalBannerUrl = await uploadImageToCloudinary(bannerFile, "banners");
+      }
+
+      let finalLogoUrl = logoPreview;
+      if (logoFile) {
+        setUploadingStatus("Mengunggah logo kios ke Cloudinary...");
+        finalLogoUrl = await uploadImageToCloudinary(logoFile, "logos");
+      }
+
+      const activeProducts = menuItems.filter((m) => m.nama.trim() !== "");
+      const uploadedProducts: MenuItem[] = [];
+
+      for (let i = 0; i < activeProducts.length; i++) {
+        const prod = activeProducts[i];
+        const file = menuItemFiles[prod.id];
+        let fotoUrl = prod.foto;
+        if (file) {
+          setUploadingStatus(`Mengunggah foto menu ${prod.nama || i + 1} ke Cloudinary...`);
+          fotoUrl = await uploadImageToCloudinary(file, "products");
+        }
+        uploadedProducts.push({
+          ...prod,
+          foto: fotoUrl,
+        });
+      }
+
+      setUploadingStatus("Menyimpan data kios...");
+
+      const newStoreData: TokoData = {
+        id: initialData?.id ?? `store-${Date.now()}`,
+        store: namaToko.trim(),
+        owner: namaPemilik.trim(),
+        category: kategori,
+        zone: nomorBlok.trim(),
+        status: statusKios,
+        operatingHours: `${jamBuka} - ${jamTutup}`,
+        establishedYear: tahunBerdiri.trim(),
+        phone: telepon.trim(),
+        email: email.trim(),
+        description: deskripsi.trim(),
+        bannerImage: finalBannerUrl,
+        logoImage: finalLogoUrl,
+        products: uploadedProducts,
+        handle: generatedHandle,
+        rating: initialData?.rating ?? "5.0",
+        transactions: initialData?.transactions ?? "0",
+      };
+
       await onSave(newStoreData);
       onClose();
     } catch (error) {
       setErrorMsg(error instanceof Error ? error.message : "Toko gagal disimpan.");
     } finally {
       setIsSubmitting(false);
+      setUploadingStatus("");
     }
   };
 
@@ -514,7 +554,11 @@ export default function TambahTokoBaru({
                   {bannerPreview && (
                     <button
                       type="button"
-                      onClick={() => setBannerPreview(null)}
+                      onClick={() => {
+                        setBannerPreview(null);
+                        setBannerFile(null);
+                        if (bannerInputRef.current) bannerInputRef.current.value = "";
+                      }}
                       className="text-[11px] font-medium text-red-600 hover:underline"
                     >
                       Hapus Banner
@@ -579,7 +623,11 @@ export default function TambahTokoBaru({
                   {logoPreview && (
                     <button
                       type="button"
-                      onClick={() => setLogoPreview(null)}
+                      onClick={() => {
+                        setLogoPreview(null);
+                        setLogoFile(null);
+                        if (logoInputRef.current) logoInputRef.current.value = "";
+                      }}
                       className="text-[11px] font-medium text-red-600 hover:underline"
                     >
                       Hapus
@@ -865,7 +913,7 @@ export default function TambahTokoBaru({
             >
               {isSubmitting ? (
                 <>
-                  <i className="fa-solid fa-spinner animate-spin" /> Menyimpan...
+                  <i className="fa-solid fa-spinner animate-spin" /> {uploadingStatus || "Menyimpan..."}
                 </>
               ) : (
                 <>

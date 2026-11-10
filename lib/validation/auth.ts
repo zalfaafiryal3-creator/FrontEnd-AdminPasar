@@ -33,6 +33,7 @@ export function validateLogin(email: string, password: string): string | null {
 export function validateRegister(input: {
   name: string;
   email: string;
+  role?: string;
   password: string;
   confirmPassword: string;
 }): string[] {

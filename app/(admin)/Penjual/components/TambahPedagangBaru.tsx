@@ -8,6 +8,7 @@ import {
   type FormEvent,
 } from "react";
 import Image from "next/image";
+import { uploadImageToCloudinary } from "../../../../lib/api";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -107,11 +108,13 @@ export default function TambahPedagangBaru({
     "Menunggu Verifikasi"
   );
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
 
   // UI state
   const [stores, setStores] = useState<{ id: string; store: string; zone: string }[]>([]);
   const [errorMsg, setErrorMsg] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
 
   const photoInputRef = useRef<HTMLInputElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
@@ -145,12 +148,27 @@ export default function TambahPedagangBaru({
   const handlePhotoChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setErrorMsg("");
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      setErrorMsg("Format foto tidak didukung. Pilih file JPG, PNG, atau WEBP.");
+      e.target.value = "";
+      return;
+    }
     if (file.size > 2 * 1024 * 1024) {
-      alert("Ukuran foto profil maksimal 2MB");
+      setErrorMsg("Ukuran foto profil maksimal 2MB.");
+      e.target.value = "";
       return;
     }
     const reader = new FileReader();
-    reader.onload = () => setPhotoPreview(reader.result as string);
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setPhotoFile(file);
+        setPhotoPreview(reader.result);
+      } else {
+        setErrorMsg("Foto tidak dapat dibaca. Silakan pilih file lain.");
+      }
+    };
+    reader.onerror = () => setErrorMsg("Foto tidak dapat dibaca. Silakan pilih file lain.");
     reader.readAsDataURL(file);
   };
 
@@ -159,12 +177,13 @@ export default function TambahPedagangBaru({
     setNoTelepon("");
     setSelectedStore("");
     setStatusAkun("Menunggu Verifikasi");
+    setPhotoFile(null);
     setPhotoPreview(null);
     setErrorMsg("");
     onClose();
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
 
@@ -178,21 +197,25 @@ export default function TambahPedagangBaru({
     }
 
     setIsSubmitting(true);
-
-    const storeObj = stores.find((s) => s.id === selectedStore);
-
-    const payload: PedagangData = {
-      id: `seller-${Date.now()}`,
-      name: namaLengkap.trim(),
-      phone: noTelepon.trim(),
-      shop: storeObj?.store ?? "Kios Mandiri",
-      block: storeObj?.zone ?? "–",
-      status: statusAkun,
-      photoUrl: photoPreview,
-    };
-
-    // Persist to localStorage
     try {
+      let photoUrl: string | null = null;
+      if (photoFile) {
+        setIsUploadingPhoto(true);
+        photoUrl = await uploadImageToCloudinary(photoFile, "sellers");
+        setIsUploadingPhoto(false);
+      }
+
+      const storeObj = stores.find((s) => s.id === selectedStore);
+      const payload: PedagangData = {
+        id: `seller-${Date.now()}`,
+        name: namaLengkap.trim(),
+        phone: noTelepon.trim(),
+        shop: storeObj?.store ?? "Kios Mandiri",
+        block: storeObj?.zone ?? "–",
+        status: statusAkun,
+        photoUrl,
+      };
+
       const existing: PedagangData[] = JSON.parse(
         localStorage.getItem("pasar-admin-sellers") || "[]"
       );
@@ -200,15 +223,17 @@ export default function TambahPedagangBaru({
         "pasar-admin-sellers",
         JSON.stringify([...existing, payload])
       );
-    } catch {
-      // ignore
-    }
 
-    setTimeout(() => {
-      setIsSubmitting(false);
       onSave(payload);
       handleCancel();
-    }, 280);
+    } catch (error) {
+      setErrorMsg(
+        error instanceof Error ? error.message : "Pedagang gagal disimpan."
+      );
+    } finally {
+      setIsUploadingPhoto(false);
+      setIsSubmitting(false);
+    }
   };
 
   // ── Derived ───────────────────────────────────────────────────────────────
@@ -320,7 +345,11 @@ export default function TambahPedagangBaru({
                 {photoPreview && (
                   <button
                     type="button"
-                    onClick={() => setPhotoPreview(null)}
+                    onClick={() => {
+                      setPhotoFile(null);
+                      setPhotoPreview(null);
+                      if (photoInputRef.current) photoInputRef.current.value = "";
+                    }}
                     className="text-[11px] font-medium text-red-600 hover:underline"
                   >
                     Hapus Foto
@@ -530,7 +559,9 @@ export default function TambahPedagangBaru({
                         />
                       </div>
                       <div className="text-left">
-                        <p className="text-xs font-semibold text-[#3b4733]">Foto berhasil diunggah</p>
+                        <p className="text-xs font-semibold text-[#3b4733]">
+                          {isUploadingPhoto ? "Mengunggah ke Cloudinary..." : "Foto siap diunggah"}
+                        </p>
                         <p className="text-[11px] text-[#748564]">Klik untuk ganti foto</p>
                       </div>
                       <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/30 opacity-0 transition group-hover:opacity-100">
@@ -582,7 +613,7 @@ export default function TambahPedagangBaru({
                 {isSubmitting ? (
                   <>
                     <i className="fa-solid fa-spinner animate-spin" />
-                    Menyimpan...
+                    {isUploadingPhoto ? "Mengunggah foto..." : "Menyimpan..."}
                   </>
                 ) : (
                   <>

@@ -54,3 +54,50 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
 
   return data as T;
 }
+
+export async function uploadImageToCloudinary(
+  file: File,
+  folder = "stores",
+): Promise<string> {
+  const formData = new FormData();
+  formData.append("file", file);
+  if (folder) {
+    formData.append("folder", folder);
+  }
+
+  let response: Response;
+  try {
+    response = await fetch(`${API_URL}/api/upload`, {
+      method: "POST",
+      body: formData,
+      credentials: "include",
+    });
+  } catch {
+    throw new ApiError(
+      "Tidak dapat terhubung ke server backend saat mengunggah foto.",
+      0,
+    );
+  }
+
+  let data: unknown = null;
+  try {
+    data = await response.json();
+  } catch {
+    // balasan bukan JSON
+  }
+
+  if (!response.ok) {
+    const body = (data ?? {}) as { error?: unknown };
+    const message =
+      typeof body.error === "string"
+        ? body.error
+        : "Gagal mengunggah foto ke Cloudinary.";
+    throw new ApiError(message, response.status);
+  }
+
+  const result = data as { url?: string };
+  if (!result.url) {
+    throw new ApiError("URL foto tidak ditemukan dalam respon Cloudinary.", 500);
+  }
+  return result.url;
+}

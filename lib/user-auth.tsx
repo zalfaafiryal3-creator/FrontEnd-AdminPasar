@@ -113,6 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           email: input.email.trim(),
           password: input.password,
           confirmPassword: input.confirmPassword,
+          role: input.role,
         },
       });
       const user = toAuthUser(data.user);

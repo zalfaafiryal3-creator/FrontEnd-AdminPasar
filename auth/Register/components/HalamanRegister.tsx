@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { getDefaultPath, useAuth } from "../../../lib/user-auth";
+import type { UserRole } from "../../../lib/types";
 import { validateRegister } from "../../../lib/validation/auth";
 
 export default function Register() {
@@ -13,6 +14,7 @@ export default function Register() {
 
   const [nama, setNama] = useState("");
   const [email, setEmail] = useState("");
+  const [role, setRole] = useState<UserRole>("seller");
   const [password, setPassword] = useState("");
   const [konfirmasi, setKonfirmasi] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -22,8 +24,11 @@ export default function Register() {
     "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4b6515]";
 
   useEffect(() => {
-    document.title = "Daftar Akun Penjual - Pasar Oro-Oro Dowo";
-  }, []);
+    document.title =
+      role === "admin"
+        ? "Daftar Akun Admin - Pasar Oro-Oro Dowo"
+        : "Daftar Akun Penjual - Pasar Oro-Oro Dowo";
+  }, [role]);
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -32,6 +37,7 @@ export default function Register() {
     const errors = validateRegister({
       name: nama,
       email,
+      role,
       password,
       confirmPassword: konfirmasi,
     });
@@ -46,6 +52,7 @@ export default function Register() {
       const result = await register({
         name: nama,
         email,
+        role,
         password,
         confirmPassword: konfirmasi,
       });
@@ -107,10 +114,12 @@ export default function Register() {
                 <i className="fa-solid fa-house" aria-hidden="true" />
               </div>
               <h1 className="text-[20px] font-bold leading-tight text-[#344b28]">
-                Daftar Akun Penjual
+                Daftar Akun {role === "admin" ? "Admin" : "Penjual"}
               </h1>
               <p className="mt-1.5 text-[10px] leading-relaxed text-[#7b8273]">
-                Buat akun penjual untuk mengelola toko di Pasar Oro-Oro Dowo.
+                {role === "admin"
+                  ? "Buat akun untuk mengakses dashboard Pasar Oro-Oro Dowo."
+                  : "Buat akun penjual untuk mengelola toko di Pasar Oro-Oro Dowo."}
               </p>
             </header>
 
@@ -155,6 +164,28 @@ export default function Register() {
                   required
                   className="h-full min-w-0 flex-1 border-0 bg-transparent text-[10px] text-[#30392a] outline-none placeholder:text-[#a2a598]"
                 />
+              </div>
+            </div>
+
+            <div>
+              <label
+                htmlFor="role"
+                className="mb-1.5 block text-[10px] font-semibold text-[#394331]"
+              >
+                Kategori
+              </label>
+              <div className="flex h-[42px] items-center gap-2.5 rounded-[10px] border border-[#e8e9dc] bg-[#fffefa] px-3 transition focus-within:border-[#a5c76c] focus-within:ring-2 focus-within:ring-[#dcebb8]/60">
+                <i className="fa-solid fa-list-ul text-xs text-[#89917d]" aria-hidden="true" />
+                <select
+                  id="role"
+                  value={role}
+                  onChange={(event) => setRole(event.target.value as UserRole)}
+                  className="h-full min-w-0 flex-1 cursor-pointer appearance-none border-0 bg-transparent pr-6 text-[10px] text-[#30392a] outline-none"
+                >
+                  <option value="seller">Penjual</option>
+                  <option value="admin">Admin</option>
+                </select>
+                <i className="fa-solid fa-chevron-down text-[9px] text-[#89917d]" aria-hidden="true" />
               </div>
             </div>
 

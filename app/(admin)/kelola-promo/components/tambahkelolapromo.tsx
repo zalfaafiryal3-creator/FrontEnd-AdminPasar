@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AdminLayout from "../../../../components/AdminLayout";
+import { uploadImageToCloudinary } from "../../../../lib/api";
 
 export type PromoData = {
   id?: string;
@@ -27,7 +28,7 @@ export type PromoData = {
 type TambahKelolaPromoProps = {
   isOpen?: boolean;
   onClose?: () => void;
-  onSave?: (data: PromoData) => void;
+  onSave?: (data: PromoData) => void | Promise<void>;
   isPageMode?: boolean;
 };
 
@@ -104,6 +105,7 @@ export default function TambahKelolaPromo({
 
   // 2. Media & Banner
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [statusPromo, setStatusPromo] = useState<PromoData["status"]>("Sedang Berlangsung");
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
@@ -123,6 +125,7 @@ export default function TambahKelolaPromo({
   // UI state
   const [errorMsg, setErrorMsg] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploadingBanner, setIsUploadingBanner] = useState(false);
 
   // Helper formatting period string
   const getPeriodString = () => {
@@ -143,15 +146,30 @@ export default function TambahKelolaPromo({
   // Handle Banner Upload
   const handleBannerChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 3 * 1024 * 1024) {
-        alert("Ukuran banner promo maksimal 3MB");
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = () => setBannerPreview(reader.result as string);
-      reader.readAsDataURL(file);
+    if (!file) return;
+    setErrorMsg("");
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      setErrorMsg("Format banner tidak didukung. Pilih file JPG, PNG, atau WEBP.");
+      e.target.value = "";
+      return;
     }
+    if (file.size > 3 * 1024 * 1024) {
+      setErrorMsg("Ukuran banner promo maksimal 3MB.");
+      e.target.value = "";
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setBannerFile(file);
+        setBannerPreview(reader.result);
+      } else {
+        setErrorMsg("Banner tidak dapat dibaca. Silakan pilih file lain.");
+      }
+    };
+    reader.onerror = () => setErrorMsg("Banner tidak dapat dibaca. Silakan pilih file lain.");
+    reader.readAsDataURL(file);
   };
 
   const currentStatusObj =
@@ -167,7 +185,7 @@ export default function TambahKelolaPromo({
   };
 
   // Submit Handler
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
 
@@ -181,64 +199,73 @@ export default function TambahKelolaPromo({
     }
 
     setIsSubmitting(true);
-
-    const periodDisplay = getPeriodString();
-    const cleanCode = (kodePromo || judulPromo.replace(/\s+/g, "")).toUpperCase().slice(0, 10);
-
-    const promoPayload: PromoData = {
-      id: `promo-${Date.now()}`,
-      title: judulPromo.trim(),
-      store: namaToko.trim(),
-      owner: namaPemilik.trim() || "Pedagang Pasar",
-      category: zonaLokasi,
-      description: deskripsi.trim(),
-      bannerImage: bannerPreview,
-      status: statusPromo,
-      periodType,
-      periodDisplay,
-      operatingHours: jamKhusus.trim() || "06.00 - 17.00 WIB",
-      terms: keteranganSyarat.trim() || "Berlaku langsung di kios",
-      code: cleanCode,
-      quota: kuotaPromo ? `0 / ${kuotaPromo}` : "0 / 100",
-      discountType: tipeDiskon,
-    };
-
-    // Save to localStorage directly for seamless persistence across pages
     try {
-      const existing = JSON.parse(localStorage.getItem("pasar-admin-promos") || "[]");
-      const record = {
-        id: promoPayload.id,
-        store: promoPayload.store,
-        owner: promoPayload.owner,
-        category: promoPayload.category.replace("Zona ", ""),
-        discount: promoPayload.title,
-        period: `${promoPayload.periodDisplay || "Periode Aktif"} • ${promoPayload.operatingHours}`,
-        requirements: promoPayload.terms,
-        quota: promoPayload.quota || "0 / 100",
-        status: promoPayload.status,
-        description: promoPayload.description,
-        bannerImage: promoPayload.bannerImage,
-        code: promoPayload.code,
-        discountType: promoPayload.discountType,
+      let bannerImage = bannerPreview;
+      if (bannerFile) {
+        setIsUploadingBanner(true);
+        bannerImage = await uploadImageToCloudinary(bannerFile, "promotions");
+        setIsUploadingBanner(false);
+      }
+
+      const periodDisplay = getPeriodString();
+      const cleanCode = (kodePromo || judulPromo.replace(/\s+/g, "")).toUpperCase().slice(0, 10);
+      const promoPayload: PromoData = {
+        id: `promo-${crypto.randomUUID()}`,
+        title: judulPromo.trim(),
+        store: namaToko.trim(),
+        owner: namaPemilik.trim() || "Pedagang Pasar",
+        category: zonaLokasi,
+        description: deskripsi.trim(),
+        bannerImage,
+        status: statusPromo,
+        periodType,
+        periodDisplay,
+        operatingHours: jamKhusus.trim() || "06.00 - 17.00 WIB",
+        terms: keteranganSyarat.trim() || "Berlaku langsung di kios",
+        code: cleanCode,
+        quota: kuotaPromo ? `0 / ${kuotaPromo}` : "0 / 100",
+        discountType: tipeDiskon,
       };
-      localStorage.setItem("pasar-admin-promos", JSON.stringify([...existing, record]));
-    } catch {
-      // ignore storage error
-    }
 
-    // Call onSave callback if provided
-    if (onSave) {
-      onSave(promoPayload);
-    }
+      if (!onSave) {
+        const storedPromos: unknown = JSON.parse(
+          localStorage.getItem("pasar-admin-promos") || "[]",
+        );
+        if (!Array.isArray(storedPromos)) {
+          throw new Error("Data promo tersimpan tidak valid. Muat ulang halaman lalu coba lagi.");
+        }
+        const existing = storedPromos as Array<Record<string, unknown>>;
+        const record = {
+          id: promoPayload.id,
+          store: promoPayload.store,
+          owner: promoPayload.owner,
+          category: promoPayload.category.replace("Zona ", ""),
+          discount: promoPayload.title,
+          period: `${promoPayload.periodDisplay || "Periode Aktif"} • ${promoPayload.operatingHours}`,
+          requirements: promoPayload.terms,
+          quota: promoPayload.quota || "0 / 100",
+          status: promoPayload.status,
+          description: promoPayload.description,
+          bannerImage: promoPayload.bannerImage,
+          code: promoPayload.code,
+          discountType: promoPayload.discountType,
+        };
+        localStorage.setItem("pasar-admin-promos", JSON.stringify([...existing, record]));
+      }
 
-    setTimeout(() => {
-      setIsSubmitting(false);
+      await onSave?.(promoPayload);
+      await new Promise((resolve) => setTimeout(resolve, 250));
       if (onClose) {
         onClose();
       } else {
         router.push("/kelola-promo");
       }
-    }, 250);
+    } catch (error) {
+      setErrorMsg(error instanceof Error ? error.message : "Promo gagal disimpan.");
+    } finally {
+      setIsUploadingBanner(false);
+      setIsSubmitting(false);
+    }
   };
 
   if (!isOpen && !isPageMode) return null;
@@ -447,7 +474,11 @@ export default function TambahKelolaPromo({
                       {bannerPreview && (
                         <button
                           type="button"
-                          onClick={() => setBannerPreview(null)}
+                          onClick={() => {
+                            setBannerFile(null);
+                            setBannerPreview(null);
+                            if (bannerInputRef.current) bannerInputRef.current.value = "";
+                          }}
                           className="text-[11px] font-medium text-red-600 hover:underline"
                         >
                           Hapus Foto
@@ -854,7 +885,8 @@ export default function TambahKelolaPromo({
             >
               {isSubmitting ? (
                 <>
-                  <i className="fa-solid fa-spinner animate-spin" /> Menyimpan...
+                  <i className="fa-solid fa-spinner animate-spin" />
+                  {isUploadingBanner ? "Mengunggah banner..." : "Menyimpan..."}
                 </>
               ) : (
                 <>
