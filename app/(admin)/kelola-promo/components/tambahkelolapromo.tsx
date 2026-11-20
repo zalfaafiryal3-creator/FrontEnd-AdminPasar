@@ -30,6 +30,8 @@ type TambahKelolaPromoProps = {
   onClose?: () => void;
   onSave?: (data: PromoData) => void | Promise<void>;
   isPageMode?: boolean;
+  isSeller?: boolean;
+  storeOptions?: string[];
 };
 
 const ZONA_CATEGORIES = [
@@ -92,6 +94,8 @@ export default function TambahKelolaPromo({
   onClose,
   onSave,
   isPageMode = false,
+  isSeller = false,
+  storeOptions = [],
 }: TambahKelolaPromoProps) {
   const router = useRouter();
 
@@ -360,15 +364,28 @@ export default function TambahKelolaPromo({
                     </label>
                     <div className="relative">
                       <i className="fa-solid fa-store pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-[#748564]" />
-                      <input
-                        id="toko-penyelenggara"
-                        type="text"
-                        required
-                        placeholder="Contoh: Tahu Bakso Cuan / Warung Bu As"
-                        value={namaToko}
-                        onChange={(e) => setNamaToko(e.target.value)}
-                        className="h-10 w-full rounded-xl border border-[#dce8c5] bg-white pl-9 pr-3 text-xs text-[#222a21] placeholder:text-[#9aa491] shadow-2xs transition focus:border-[#496d2e] focus:outline-none focus:ring-2 focus:ring-[#8cae4e]/40"
-                      />
+                      {isSeller ? (
+                        <select
+                          id="toko-penyelenggara"
+                          required
+                          value={namaToko}
+                          onChange={(e) => setNamaToko(e.target.value)}
+                          className="h-10 w-full rounded-xl border border-[#dce8c5] bg-white pl-9 pr-3 text-xs text-[#222a21] shadow-2xs transition focus:border-[#496d2e] focus:outline-none focus:ring-2 focus:ring-[#8cae4e]/40"
+                        >
+                          <option value="">Pilih toko milikmu</option>
+                          {storeOptions.map((store) => <option value={store} key={store}>{store}</option>)}
+                        </select>
+                      ) : (
+                        <input
+                          id="toko-penyelenggara"
+                          type="text"
+                          required
+                          placeholder="Contoh: Tahu Bakso Cuan / Warung Bu As"
+                          value={namaToko}
+                          onChange={(e) => setNamaToko(e.target.value)}
+                          className="h-10 w-full rounded-xl border border-[#dce8c5] bg-white pl-9 pr-3 text-xs text-[#222a21] placeholder:text-[#9aa491] shadow-2xs transition focus:border-[#496d2e] focus:outline-none focus:ring-2 focus:ring-[#8cae4e]/40"
+                        />
+                      )}
                     </div>
                   </div>
 

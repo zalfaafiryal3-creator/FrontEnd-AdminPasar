@@ -42,6 +42,7 @@ export type Store = {
 };
 
 export type StoreProductInput = {
+  id?: number;
   name: string;
   price: number;
   description: string;
@@ -69,6 +70,7 @@ export type StoreCreateRequest = {
 export type StoreUpdateRequest = Partial<StoreCreateRequest>;
 
 export type StoreFormProduct = {
+  id?: string;
   nama: string;
   harga: string;
   deskripsi: string;
@@ -191,7 +193,11 @@ function toProductRequest(product: StoreFormProduct, index: number): StoreProduc
     throw new Error(`Deskripsi produk ke-${index + 1} maksimal 300 karakter.`);
   }
 
+  const parsedId = product.id && /^\d+$/.test(product.id) ? Number(product.id) : undefined;
+  if (parsedId !== undefined) assertPositiveId(parsedId, `ID produk ke-${index + 1}`);
+
   return {
+    ...(parsedId === undefined ? {} : { id: parsedId }),
     name,
     price: parseProductPrice(product.harga),
     description,
@@ -263,6 +269,11 @@ export function getStoreCategories(): Promise<StoreCategory[]> {
 
 export function getManagedStores(): Promise<Store[]> {
   return apiRequest<Store[]>("/api/stores/manage");
+}
+
+export function getManagedStore(id: number): Promise<Store> {
+  assertPositiveId(id, "Toko");
+  return apiRequest<Store>(`/api/stores/manage/${id}`);
 }
 
 export function createStore(request: StoreCreateRequest): Promise<Store> {

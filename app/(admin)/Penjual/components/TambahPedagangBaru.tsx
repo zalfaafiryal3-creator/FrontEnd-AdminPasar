@@ -9,6 +9,7 @@ import {
 } from "react";
 import Image from "next/image";
 import { uploadImageToCloudinary } from "../../../../lib/api";
+import { getManagedStores } from "../../../../lib/store-api";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -74,6 +75,17 @@ function readStores(): { id: string; store: string; zone: string }[] {
       { id: "store-default-bakso", store: "Bakso Goreng Bangkit", zone: "Blok A-10" },
       { id: "store-default-jamu", store: "Jamu Tradisional Bu Darto", zone: "Blok B-15" },
     ];
+    const cachedBackend = localStorage.getItem("pasar-admin-stores-cache");
+    if (cachedBackend) {
+      const parsed = JSON.parse(cachedBackend);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.map((s: { id: number | string; name?: string; store?: string; zone?: string }) => ({
+          id: String(s.id),
+          store: s.name || s.store || "Kios Pasar",
+          zone: s.zone || "Blok A",
+        }));
+      }
+    }
     const saved: { id: string; store: string; zone: string }[] = JSON.parse(
       localStorage.getItem("pasar-admin-stores") || "[]"
     );
@@ -119,9 +131,22 @@ export default function TambahPedagangBaru({
   const photoInputRef = useRef<HTMLInputElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
 
-  // Load stores from localStorage on mount / open
+  // Load stores from localStorage & backend on mount / open
   useEffect(() => {
-    if (isOpen) setStores(readStores());
+    if (isOpen) {
+      setStores(readStores());
+      getManagedStores()
+        .then((latest) => {
+          if (Array.isArray(latest) && latest.length > 0) {
+            setStores(latest.map((s) => ({
+              id: String(s.id),
+              store: s.name,
+              zone: s.zone || "Blok A",
+            })));
+          }
+        })
+        .catch(() => {});
+    }
   }, [isOpen]);
 
   // Lock body scroll while open

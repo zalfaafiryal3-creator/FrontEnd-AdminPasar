@@ -8,6 +8,7 @@ import { useAuth } from "../../../../lib/user-auth";
 import {
   createStore,
   deleteStore,
+  getManagedStore,
   getManagedStores,
   getStoreCategories,
   mapStoreFormToCreateRequest,
@@ -89,7 +90,23 @@ function isProtectedStore(store: Store): boolean {
 export default function KelolaToko() {
   const { currentUser } = useAuth();
   const canEditStatus = currentUser?.role === "admin";
-  const [stores, setStores] = useState<Store[]>([]);
+  const canManageStore = useCallback((store: Store) => (
+    currentUser?.role === "admin" || store.sellerId === currentUser?.id
+  ), [currentUser]);
+  const isReadOnlyStore = useCallback((store: Store) => (
+    isProtectedStore(store) || !canManageStore(store)
+  ), [canManageStore]);
+  const [stores, setStores] = useState<Store[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const cached = localStorage.getItem("pasar-admin-stores-cache");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return [];
+  });
   const [categories, setCategories] = useState<StoreCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -102,8 +119,22 @@ export default function KelolaToko() {
     setIsLoading(true);
     setLoadError(null);
     try {
-      setStores(await getManagedStores());
+      const remoteStores = await getManagedStores();
+      setStores(remoteStores);
+      try {
+        localStorage.setItem("pasar-admin-stores-cache", JSON.stringify(remoteStores));
+      } catch {}
     } catch (error) {
+      try {
+        const cached = localStorage.getItem("pasar-admin-stores-cache");
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setStores(parsed);
+            return;
+          }
+        }
+      } catch {}
       setLoadError(getErrorMessage(error));
     } finally {
       setIsLoading(false);
@@ -135,8 +166,10 @@ export default function KelolaToko() {
   }, [categories, loadStores]);
 
   const saveEditedStore = useCallback(async (store: Store, data: TokoData) => {
-    if (isProtectedStore(store)) {
-      const message = "Toko Dicuri tidak dapat diubah dari halaman ini.";
+    if (isReadOnlyStore(store)) {
+      const message = isProtectedStore(store)
+        ? "Toko ini tidak dapat diubah dari halaman ini."
+        : "Kamu hanya dapat mengubah toko milikmu sendiri.";
       setNotice({ type: "error", message });
       throw new Error(message);
     }
@@ -149,7 +182,6 @@ export default function KelolaToko() {
         categories,
         { includeStatus: canEditStatus },
       );
-      delete request.products;
       await updateStore(store.id, request);
       await loadStores();
       setNotice({ type: "success", message: "Perubahan toko berhasil disimpan." });
@@ -160,11 +192,31 @@ export default function KelolaToko() {
     } finally {
       setIsMutating(false);
     }
-  }, [canEditStatus, categories, loadStores]);
+  }, [canEditStatus, categories, isReadOnlyStore, loadStores]);
+
+  const openStoreEditor = useCallback(async (recordId: string) => {
+    const store = stores.find((item) => String(item.id) === recordId);
+    if (!store || isReadOnlyStore(store)) return;
+
+    setIsMutating(true);
+    setNotice(null);
+    try {
+      setEditingStore(await getManagedStore(store.id));
+    } catch (error) {
+      setNotice({ type: "error", message: getErrorMessage(error) });
+    } finally {
+      setIsMutating(false);
+    }
+  }, [isReadOnlyStore, stores]);
 
   const removeStore = useCallback(async (store: Store) => {
-    if (isProtectedStore(store)) {
-      setNotice({ type: "error", message: "Toko Dicuri tidak dapat dihapus dari halaman ini." });
+    if (isReadOnlyStore(store)) {
+      setNotice({
+        type: "error",
+        message: isProtectedStore(store)
+          ? "Toko ini tidak dapat dihapus dari halaman ini."
+          : "Kamu hanya dapat menghapus toko milikmu sendiri.",
+      });
       return;
     }
     if (!window.confirm(`Hapus toko "${store.name}"? Tindakan ini tidak dapat dibatalkan.`)) return;
@@ -180,7 +232,7 @@ export default function KelolaToko() {
     } finally {
       setIsMutating(false);
     }
-  }, [loadStores]);
+  }, [isReadOnlyStore, loadStores]);
 
   const records = useMemo(() => stores.map((store) => ({
     id: String(store.id),
@@ -191,6 +243,7 @@ export default function KelolaToko() {
     phone: store.phone || "—",
     category: store.category,
     rating: store.reviewCount > 0 ? store.rating.toFixed(1) : "—",
+    reviewCount: `${store.reviewCount} ulasan`,
     transactions: store.productCount === 1 ? "1 produk" : `${store.productCount} produk`,
     zone: store.zone || "—",
     status: store.status === "menunggu_verifikasi"
@@ -218,10 +271,9 @@ export default function KelolaToko() {
       searchLabel: "Cari toko",
       storageKey: "pasar-admin-stores",
       summary: [
-        { label: "TOKO DITAMPILKAN", value: String(stores.length), detail: "Data dari backend", icon: "fa-store", tone: "green" },
+        { label: "TOKO DITAMPILKAN", value: String(stores.length), detail: "Data dari backend MySQL", icon: "fa-store", tone: "green" },
         { label: "KATEGORI", value: String(categoryNames.length), detail: "Kategori pada daftar toko", icon: "fa-utensils", tone: "amber" },
-        { label: "TOTAL PENGGUNA", value: "—", detail: "Data pengguna belum tersedia", icon: "fa-users", tone: "green" },
-        { label: "TOTAL TRANSAKSI", value: "—", detail: "Data transaksi belum tersedia", icon: "fa-wallet", tone: "amber" },
+        { label: "KIOS AKTIF", value: String(records.filter((r) => r.status.includes("Aktif") || r.status.includes("Buka") || r.status.includes("Terverifikasi")).length), detail: "Lapak operasional", icon: "fa-circle-check", tone: "green" },
       ],
       filters: [
         { label: "Semua Kategori", field: "category", options: categoryNames },
@@ -263,7 +315,7 @@ export default function KelolaToko() {
           </td>
           <td><div className="flex min-w-0 flex-col gap-1 break-words text-[10px] text-[#594045]"><strong className="text-[11px]">{record.owner}</strong><span>{record.phone}</span><span>{record.email}</span></div></td>
           <td><span className="inline-flex max-w-full rounded-lg bg-[#d9eaae] px-2.5 py-1 text-[10px] font-semibold text-[#315e20]">{record.category}</span></td>
-          <td><span className="whitespace-nowrap text-[13px] font-bold text-amber-600">{record.rating === "—" ? "★ —" : `★ ${record.rating}`}</span><small className="mt-1 block text-[9px] text-[#74666a]">{record.transactions}</small></td>
+          <td><span className="whitespace-nowrap text-[13px] font-bold text-amber-600">{record.rating === "—" ? "★ —" : `★ ${record.rating}`}</span><small className="mt-1 block text-[9px] text-[#74666a]">{record.reviewCount} • {record.transactions}</small></td>
           <td><span className={`inline-flex max-w-full items-center gap-1 rounded-lg px-2 py-1 text-[9px] font-semibold leading-snug ${String(record.status ?? "").includes("Terverifikasi") ? "bg-[#d9eaae] text-[#315e20]" : "bg-amber-300 text-[#594045]"}`}><i className="fa-solid fa-circle-check" /> {record.status || "—"}</span></td>
           <td>
             <div className="flex items-center justify-end gap-1">
@@ -271,7 +323,7 @@ export default function KelolaToko() {
                 className="grid h-8 w-8 place-items-center rounded-lg text-[#4b6515] hover:bg-[#edf5d7] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4b6515] disabled:cursor-not-allowed disabled:opacity-40"
                 type="button"
                 aria-label={`Edit ${record.store}`}
-                title={actions?.isProtected ? "Toko ini dilindungi dan tidak dapat diubah." : "Edit toko"}
+                title={actions?.isProtected ? "Hanya admin atau pemilik toko yang dapat mengubahnya." : "Edit toko"}
                 disabled={!actions?.onEdit || actions.isBusy || actions.isProtected}
                 onClick={actions?.onEdit}
               >
@@ -281,7 +333,7 @@ export default function KelolaToko() {
                 className="grid h-8 w-8 place-items-center rounded-lg text-red-700 hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700 disabled:cursor-not-allowed disabled:opacity-40"
                 type="button"
                 aria-label={`Hapus ${record.store}`}
-                title={actions?.isProtected ? "Toko ini dilindungi dan tidak dapat dihapus." : "Hapus toko"}
+                title={actions?.isProtected ? "Hanya admin atau pemilik toko yang dapat menghapusnya." : "Hapus toko"}
                 disabled={!actions?.onDelete || actions.isBusy || actions.isProtected}
                 onClick={actions?.onDelete}
               >
@@ -322,19 +374,14 @@ export default function KelolaToko() {
           emptyMessage: "Belum ada toko yang dapat ditampilkan.",
           canAdd: categories.length > 0 && !categoryError,
           onSaveCustomData: saveNewStore,
-          onEditRecord: categories.length > 0
-            ? (record) => {
-                const store = storeForRecord(record.id);
-                if (store && !isProtectedStore(store)) setEditingStore(store);
-              }
-            : undefined,
+          onEditRecord: categories.length > 0 ? (record) => { void openStoreEditor(record.id); } : undefined,
           onDeleteRecord: (record) => {
             const store = storeForRecord(record.id);
             if (store) void removeStore(store);
           },
           isRecordProtected: (record) => {
             const store = storeForRecord(record.id);
-            return store ? isProtectedStore(store) : true;
+            return store ? isReadOnlyStore(store) : true;
           },
           isMutating,
         }}

@@ -1,5 +1,6 @@
 import AdminLayout from "../../../../components/AdminLayout";
 import ManagementTable, { type ManagementTableConfig } from "../../../../components/ManagementTable";
+import { initialUserRecords } from "../../../../lib/admin-records";
 
 const config: ManagementTableConfig = {
   className: "user-management",
@@ -23,13 +24,7 @@ const config: ManagementTableConfig = {
     { label: "Semua Status", field: "status", options: ["Aktif", "Ditangguhkan"] },
   ],
   columns: ["PENGGUNA", "EMAIL & VERIFIKASI", "NO. WHATSAPP", "STATUS AKUN", "AKTIVITAS TERAKHIR"],
-  initialRecords: [
-    { id: "user-default-mifta-annisa", name: "Mifta Annisa", email: "miftannisa@gmail.com", phone: "+62 812-3456-7890", status: "Aktif", type: "Pelanggan", activity: "2 menit lalu", browser: "Web Browser • Klojen, Malang" },
-    { id: "user-default-serli", name: "Serli Maharani", email: "serli.m@gmail.com", phone: "+62 813-9811-4450", status: "Aktif", type: "Pelanggan", activity: "15 menit lalu", browser: "Web Browser • Lowokwaru" },
-    { id: "user-default-firyal", name: "Firyal Zalfa", email: "firyal.z@gmail.com", phone: "+62 821-7734-1199", status: "Aktif", type: "Pelanggan", activity: "1 jam lalu", browser: "Web Browser • Sukun, Malang" },
-    { id: "user-default-naila", name: "Naila", email: "Nafisha_Naila@gmail.com", phone: "+62 812-3341-9011", status: "Aktif", type: "Pembeli", activity: "Kemarin, 14.20", browser: "Browser • Blimbing" },
-    { id: "user-default-zee", name: "Zee", email: "ZEE@gmail.com", phone: "+62 856-3222-1134", status: "Aktif", type: "Pelanggan", activity: "3 hari lalu", browser: "Web Browser • Dau, Malang" },
-  ],
+  initialRecords: initialUserRecords,
   fields: [
     { name: "name", label: "Nama Lengkap" },
     { name: "email", label: "Email", type: "email" },

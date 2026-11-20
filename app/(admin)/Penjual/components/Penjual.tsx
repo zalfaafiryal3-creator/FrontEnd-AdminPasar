@@ -1,6 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import TambahPedagangBaru, { type PedagangData } from "./TambahPedagangBaru";
 import AdminLayout from "../../../../components/AdminLayout";
+import { getManagedStores } from "../../../../lib/store-api";
+import { initialSellerRecords } from "../../../../lib/admin-records";
 
 
 type FilterDropdownProps = {
@@ -110,22 +112,73 @@ function FilterDropdown({
   );
 }
 
-const sellerSeed = [
-  { id: "seller-1", name: "Budi Santoso", shop: "Toko Tahu & Sayur Barokah", block: "Kios A-12", status: "Lapak Buka", phone: "+62 812-3456-7890", email: "budisantoso@gmail.com", type: "Zona Kuliner" },
-  { id: "seller-2", name: "Joko Prasetyo", shop: "Los Daging Segar Pak Joko", block: "Lapak B-04", status: "Lapak Buka", phone: "+62 813-8900-7723", email: "jokoprasetyo@gmail.com", type: "Zona Daging" },
-  { id: "seller-3", name: "Sri Wahyuni", shop: "Kue Tradisional & Jajanan Bu Sri", block: "Kios B-08", status: "Lapak Buka", phone: "+62 821-4567-9011", email: "sri.wahyuni@gmail.com", type: "Zona Kuliner" },
-  { id: "seller-4", name: "Siti Aminah", shop: "Bumbu Dapur & Rempah Alam", block: "Los B-02", status: "Tutup Sementara", phone: "+62 857-9012-3456", email: "siti.aminah@gmail.com", type: "Zona Bahan Pokok" },
-];
+const STORAGE_KEY = "pasar-admin-sellers";
+
+const sellerSeed = initialSellerRecords;
+
+function readSellersFromStorage(): typeof sellerSeed {
+  if (typeof window === "undefined") return sellerSeed;
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch {}
+  return sellerSeed;
+}
 
 export default function Penjual() {
-  const [sellers, setSellers] = useState(sellerSeed);
+  const [sellers, setSellers] = useState(() => readSellersFromStorage());
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const [zoneFilter, setZoneFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [sortFilter, setSortFilter] = useState("Pengajuan Terbaru");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const visibleSellers = sellers.filter((seller) =>
+
+  // Sync sellers with stores from backend/MySQL or cache
+  useEffect(() => {
+    getManagedStores()
+      .then((stores) => {
+        if (!Array.isArray(stores) || stores.length === 0) return;
+        setSellers((current) => {
+          const currentShopNames = new Set(current.map((s) => s.shop.trim().toLowerCase()));
+          const newFromStores = stores
+            .filter((store) => !currentShopNames.has(store.name.trim().toLowerCase()))
+            .map((store) => ({
+              id: `store-seller-${store.id}`,
+              name: store.owner && store.owner !== "Belum diisi" ? store.owner : "Pedagang " + store.name,
+              shop: store.name,
+              block: store.zone || "Blok A",
+              status: store.status === "buka" ? "Lapak Buka" : store.status === "tutup" ? "Tutup Sementara" : "Menunggu Verifikasi",
+              phone: store.phone || "-",
+              email: store.email || "-",
+              type: store.category.includes("Sayur") || store.category.includes("Daging") || store.category.includes("Sembako") ? "Zona Bahan Pokok" : "Zona Kuliner",
+            }));
+          if (newFromStores.length === 0) return current;
+          const merged = [...current, ...newFromStores];
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+          } catch {}
+          return merged;
+        });
+      })
+      .catch(() => {
+        // Server closed: local sellers are already preserved in localStorage!
+      });
+  }, []);
+
+  const persistSellers = (updated: typeof sellerSeed) => {
+    setSellers(updated);
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    } catch {}
+  };
+
+  const visibleSellers = useMemo(() => sellers.filter((seller) =>
     `${seller.name} ${seller.shop} ${seller.block}`.toLowerCase().includes(search.toLowerCase())
     && (!zoneFilter || seller.type === zoneFilter)
     && (!statusFilter || seller.status === statusFilter),
@@ -133,7 +186,11 @@ export default function Penjual() {
     if (sortFilter === "Nama Pedagang A-Z") return a.name.localeCompare(b.name);
     if (sortFilter === "Nama Pedagang Z-A") return b.name.localeCompare(a.name);
     return 0;
-  });
+  }), [sellers, search, zoneFilter, statusFilter, sortFilter]);
+
+  const activeSellersCount = useMemo(() => (
+    sellers.filter((s) => s.status === "Lapak Buka").length
+  ), [sellers]);
 
   const toggleSelection = (id: string) => {
     setSelectedIds((current) => current.includes(id)
@@ -143,30 +200,31 @@ export default function Penjual() {
 
   const handleDeleteSellers = () => {
     if (!selectedIds.length) return;
-    setSellers((current) => current.filter((seller) => !selectedIds.includes(seller.id)));
+    const updated = sellers.filter((seller) => !selectedIds.includes(seller.id));
+    persistSellers(updated);
     setSelectedIds([]);
   };
 
   const handleSavePedagang = (data: PedagangData) => {
-    setSellers((current) => [
-      {
-        id: data.id,
-        name: data.name,
-        shop: data.shop,
-        block: data.block,
-        status: data.status === "Aktif" ? "Lapak Buka" : data.status === "Nonaktif" ? "Tutup Sementara" : "Menunggu Verifikasi",
-        phone: data.phone,
-        email: data.email ?? "",
-        type: data.type ?? "Zona Umum",
-      },
-      ...current,
-    ]);
+    const newSeller = {
+      id: data.id || `seller-${Date.now()}`,
+      name: data.name,
+      shop: data.shop,
+      block: data.block,
+      status: data.status === "Aktif" ? "Lapak Buka" : data.status === "Nonaktif" ? "Tutup Sementara" : "Menunggu Verifikasi",
+      phone: data.phone,
+      email: data.email ?? "",
+      type: data.type ?? "Zona Kuliner",
+    };
+    const updated = [newSeller, ...sellers.filter((s) => s.id !== newSeller.id)];
+    persistSellers(updated);
   };
 
   const handleToggleSellerStatus = () => {
-    setSellers((current) => current.map((seller) => selectedIds.includes(seller.id)
+    const updated = sellers.map((seller) => selectedIds.includes(seller.id)
       ? { ...seller, status: seller.status === "Lapak Buka" ? "Tutup Sementara" : "Lapak Buka" }
-      : seller));
+      : seller);
+    persistSellers(updated);
   };
 
   return (
@@ -183,13 +241,13 @@ export default function Penjual() {
 
         <section className="mb-4 grid grid-cols-3 gap-3 max-[760px]:grid-cols-1 max-[760px]:gap-2" aria-label="Ringkasan penjual">
           <article className="flex min-w-0 items-center justify-between gap-3 rounded-xl border border-[rgba(194,220,128,0.65)] bg-[#fbfcf7] p-4 shadow-[0_4px_12px_rgba(75,101,21,0.06)] max-[760px]:py-3">
-            <div className="grid gap-1"><span className="text-[9px] font-semibold leading-[1.3] tracking-[0.03em] text-[#74666a]">TOTAL PEDAGANG TERDAFTAR</span><strong className="text-[22px] leading-none text-[#594045]">251</strong><small className="text-[10px] text-[#74666a]">251 Aktif • bulan ini</small></div><i className="fa-solid fa-users text-xl text-[#4b6515]" />
+            <div className="grid gap-1"><span className="text-[9px] font-semibold leading-[1.3] tracking-[0.03em] text-[#74666a]">TOTAL PEDAGANG TERDAFTAR</span><strong className="text-[22px] leading-none text-[#594045]">{sellers.length}</strong><small className="text-[10px] text-[#74666a]">{activeSellersCount} Aktif • data tersimpan</small></div><i className="fa-solid fa-users text-xl text-[#4b6515]" />
           </article>
           <article className="flex min-w-0 items-center justify-between gap-3 rounded-xl border border-[rgba(194,220,128,0.65)] bg-[#fff9e9] p-4 shadow-[0_4px_12px_rgba(75,101,21,0.06)] max-[760px]:py-3">
-            <div className="grid gap-1"><span className="text-[9px] font-semibold leading-[1.3] tracking-[0.03em] text-[#74666a]">KIOS / LAPAK AKTIF BERJUALAN</span><strong className="text-[22px] leading-none text-[#594045]">240 <small className="text-[11px] font-medium">Kios</small></strong><small className="text-[10px] text-[#74666a]">96% dari keseluruhan pasar</small></div><i className="fa-solid fa-shop text-xl text-[#d39811]" />
+            <div className="grid gap-1"><span className="text-[9px] font-semibold leading-[1.3] tracking-[0.03em] text-[#74666a]">KIOS / LAPAK AKTIF BERJUALAN</span><strong className="text-[22px] leading-none text-[#594045]">{activeSellersCount} <small className="text-[11px] font-medium">Kios</small></strong><small className="text-[10px] text-[#74666a]">Lapak operasional</small></div><i className="fa-solid fa-shop text-xl text-[#d39811]" />
           </article>
           <article className="flex min-w-0 items-center justify-between gap-3 rounded-xl border border-[rgba(194,220,128,0.65)] bg-[#fbfcf7] p-4 shadow-[0_4px_12px_rgba(75,101,21,0.06)] max-[760px]:py-3">
-            <div className="grid gap-1"><span className="text-[9px] font-semibold leading-[1.3] tracking-[0.03em] text-[#74666a]">KIOS / LAPAK KOSONG</span><strong className="text-[22px] leading-none text-[#594045]">11 <small className="text-[11px] font-medium">Kios</small></strong><small className="text-[10px] text-[#74666a]">Pedagang baru dapat mendaftar</small></div><i className="fa-solid fa-store text-xl text-[#4b6515]" />
+            <div className="grid gap-1"><span className="text-[9px] font-semibold leading-[1.3] tracking-[0.03em] text-[#74666a]">KIOS / LAPAK KOSONG</span><strong className="text-[22px] leading-none text-[#594045]">{Math.max(0, 251 - sellers.length)} <small className="text-[11px] font-medium">Kios</small></strong><small className="text-[10px] text-[#74666a]">Pedagang baru dapat mendaftar</small></div><i className="fa-solid fa-store text-xl text-[#4b6515]" />
           </article>
         </section>
 

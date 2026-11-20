@@ -71,9 +71,12 @@ type ManagementTableProps<TCustomData> = {
     error: string | null;
     emptyMessage?: string;
     canAdd?: boolean;
+    addDisabledReason?: string;
     onSaveCustomData?: (data: TCustomData) => Promise<void>;
     onEditRecord?: (record: RecordEntry) => void;
     onDeleteRecord?: (record: RecordEntry) => void;
+    onDeleteSelected?: (ids: string[]) => Promise<void>;
+    onToggleSelectedStatus?: (records: RecordEntry[]) => Promise<void>;
     isRecordProtected?: (record: RecordEntry) => boolean;
     isMutating?: boolean;
   };
@@ -113,11 +116,18 @@ export default function ManagementTable<TCustomData = RecordEntry>({
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [openFilters, setOpenFilters] = useState<Record<string, boolean>>({});
   const [selectedIds, setSelectedIds] = useState(() => new Set<string>());
+  const [mutationError, setMutationError] = useState("");
   const dialogRef = useRef<HTMLDialogElement>(null);
   const records = remoteData?.records ?? localRecords;
   const visibleRecords = records.filter((record) =>
     Object.values(record).join(" ").toLocaleLowerCase("id").includes(search.trim().toLocaleLowerCase("id"))
     && (config.filters ?? []).every(({ field }) => !filters[field] || record[field] === filters[field] || String(record[field] ?? "").startsWith(filters[field])),
+  );
+  const isSelectableRecord = (record: RecordEntry) =>
+    !(remoteData?.isRecordProtected?.(record) ?? false);
+  const selectableVisibleRecords = visibleRecords.filter(isSelectableRecord);
+  const selectableSelectedRecords = records.filter((record) =>
+    selectedIds.has(record.id) && isSelectableRecord(record),
   );
 
   const [isCustomModalOpen, setIsCustomModalOpen] = useState(false);
@@ -163,11 +173,22 @@ export default function ManagementTable<TCustomData = RecordEntry>({
     });
   }
 
-  function deleteSelected() {
-    if (!selectedIds.size) return;
+  async function deleteSelected() {
+    if (!selectableSelectedRecords.length) return;
 
     const subjectLabel = (config.deleteLabel || "Promo").toLowerCase();
-    if (!window.confirm(`Hapus ${selectedIds.size} ${subjectLabel} yang dipilih?`)) return;
+    if (!window.confirm(`Hapus ${selectableSelectedRecords.length} ${subjectLabel} yang dipilih?`)) return;
+
+    if (remoteData?.onDeleteSelected) {
+      try {
+        setMutationError("");
+        await remoteData.onDeleteSelected(selectableSelectedRecords.map((record) => record.id));
+        setSelectedIds(new Set());
+      } catch (error) {
+        setMutationError(error instanceof Error ? error.message : "Data gagal dihapus.");
+      }
+      return;
+    }
 
     if (!config.deletedStorageKey) return;
     const deletedIds = new Set(readStorage<string>(config.deletedStorageKey));
@@ -180,7 +201,18 @@ export default function ManagementTable<TCustomData = RecordEntry>({
     setSelectedIds(new Set());
   }
 
-  function toggleSelectedStatus() {
+  async function toggleSelectedStatus() {
+    if (remoteData?.onToggleSelectedStatus) {
+      try {
+        setMutationError("");
+        await remoteData.onToggleSelectedStatus(selectableSelectedRecords);
+        setSelectedIds(new Set());
+      } catch (error) {
+        setMutationError(error instanceof Error ? error.message : "Status promo gagal diperbarui.");
+      }
+      return;
+    }
+
     const updated = records.map((record) => selectedIds.has(record.id)
       ? { ...record, status: record.status === "Ditangguhkan" ? "Aktif" : "Ditangguhkan" }
       : record);
@@ -197,7 +229,9 @@ export default function ManagementTable<TCustomData = RecordEntry>({
           className="add-button inline-flex min-h-8 shrink-0 items-center justify-center gap-1.5 rounded-md bg-[#ffb91b] px-3 py-2 text-[10px] font-semibold text-white shadow-sm transition hover:bg-[#eba900] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#496d2e]"
           type="button"
           disabled={remoteData?.canAdd === false || remoteData?.isMutating}
-          title={remoteData?.canAdd === false ? "Kategori toko belum tersedia." : undefined}
+          title={remoteData?.canAdd === false
+            ? remoteData.addDisabledReason ?? "Kategori toko belum tersedia."
+            : undefined}
           aria-disabled={remoteData?.canAdd === false || remoteData?.isMutating}
           onClick={() => {
             if (config.customAddModal) {
@@ -213,6 +247,7 @@ export default function ManagementTable<TCustomData = RecordEntry>({
         </button>
       </div>
       {config.summary && <section className="management-summary mb-3 grid grid-cols-2 gap-2 md:grid-cols-4" aria-label="Ringkasan">{config.summary.map((metric) => <article className={`summary-card flex min-h-[70px] items-center justify-between gap-2 rounded-lg border border-[#dce8c5] bg-white p-3 shadow-sm ${metric.tone === "amber" ? "border-amber-200 bg-amber-50" : ""}`} key={metric.label}><div className="flex min-w-0 flex-col"><span className="text-[9px] text-[#66705e]">{metric.label}</span><strong className="text-base font-bold text-[#222a21]">{metric.value}</strong><small className="text-[8px] text-[#66705e]">{metric.detail}</small></div><i className={`fa-solid ${metric.icon} text-base text-[#496d2e]`} aria-hidden="true" /></article>)}</section>}
+      {mutationError && <p className="mb-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700" role="alert">{mutationError}</p>}
       <div className="management-toolbar mb-2 flex flex-wrap items-center gap-1.5 rounded-lg bg-white p-2 shadow-sm">
         <label className="filter-bar flex min-h-8 min-w-[140px] flex-1 items-center gap-2 rounded-full border border-[#dce8c5] bg-[#fbfcf7] px-3 text-[#61744b]"><i className="fa-solid fa-magnifying-glass text-[10px]" /><input className="w-full min-w-0 bg-transparent text-[10px] text-[#37412e] outline-none placeholder:text-[#8a9082]" type="search" placeholder={config.searchPlaceholder} aria-label={config.searchLabel} value={search} onChange={(event) => setSearch(event.target.value)} /></label>
         {config.filters?.map((filter) => {
@@ -267,24 +302,27 @@ export default function ManagementTable<TCustomData = RecordEntry>({
       </div>
       <div className="table-shell overflow-x-auto rounded-lg border border-[#dce8c5] bg-white shadow-sm">
         <table className={`data-table w-full border-collapse text-left text-[9px] md:text-[10px] [&_tbody_td]:px-2 [&_tbody_td]:py-2 [&_tbody_td]:align-middle [&_tbody_td]:text-[#394432] [&_tbody_tr:last-child]:border-b-0 ${config.tableClass}`}>
-          <thead className="bg-[#f2f7e5] text-[#4b6734]"><tr>{config.selectable && <th className="selection-column px-2 py-2"><input type="checkbox" className="accent-[#496d2e]" aria-label="Pilih semua data" checked={visibleRecords.length > 0 && visibleRecords.every((record) => selectedIds.has(record.id))} onChange={(event) => setSelectedIds((current) => { const next = new Set(current); visibleRecords.forEach((record) => event.target.checked ? next.add(record.id) : next.delete(record.id)); return next; })} /></th>}{config.columns.map((column: string) => <th className="whitespace-nowrap px-2 py-2 font-semibold" key={column}>{column}</th>)}</tr></thead>
+          <thead className="bg-[#f2f7e5] text-[#4b6734]"><tr>{config.selectable && <th className="selection-column px-2 py-2"><input type="checkbox" className="accent-[#496d2e]" aria-label="Pilih semua data yang dapat dikelola" checked={selectableVisibleRecords.length > 0 && selectableVisibleRecords.every((record) => selectedIds.has(record.id))} onChange={(event) => setSelectedIds((current) => { const next = new Set(current); selectableVisibleRecords.forEach((record) => event.target.checked ? next.add(record.id) : next.delete(record.id)); return next; })} /></th>}{config.columns.map((column: string) => <th className="whitespace-nowrap px-2 py-2 font-semibold" key={column}>{column}</th>)}</tr></thead>
           <tbody>
-            {visibleRecords.map((record) => (
-              <tr key={record.id} className={`border-t border-[#edf1e7] ${config.selectable ? "cursor-pointer hover:bg-[#f6f9ef] focus-visible:outline-2 focus-visible:outline-[#496d2e]" : "hover:bg-[#fbfcf7]"} ${selectedIds.has(record.id) ? "selected-promo bg-[#f2f7e5]" : ""}`} tabIndex={config.selectable ? 0 : undefined} aria-selected={config.selectable ? selectedIds.has(record.id) : undefined} onClick={config.selectable ? () => toggleSelection(record.id) : undefined} onKeyDown={config.selectable ? (event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  toggleSelection(record.id);
-                }
-              } : undefined}>
-                {config.selectable && <td className="selection-column px-2 py-2"><input type="checkbox" className="accent-[#496d2e]" aria-label={`Pilih ${record.name || record.store || record.id}`} checked={selectedIds.has(record.id)} onChange={() => toggleSelection(record.id)} onClick={(event) => event.stopPropagation()} /></td>}
-                {config.renderRecord(record, {
-                  onEdit: remoteData?.onEditRecord ? () => remoteData.onEditRecord?.(record) : undefined,
-                  onDelete: remoteData?.onDeleteRecord ? () => remoteData.onDeleteRecord?.(record) : undefined,
-                  isBusy: Boolean(remoteData?.isMutating),
-                  isProtected: remoteData?.isRecordProtected?.(record) ?? false,
-                })}
-              </tr>
-            ))}
+              {visibleRecords.map((record) => {
+                const canSelect = isSelectableRecord(record);
+                return (
+                  <tr key={record.id} className={`border-t border-[#edf1e7] ${config.selectable && canSelect ? "cursor-pointer hover:bg-[#f6f9ef] focus-visible:outline-2 focus-visible:outline-[#496d2e]" : "hover:bg-[#fbfcf7]"} ${selectedIds.has(record.id) ? "selected-promo bg-[#f2f7e5]" : ""}`} tabIndex={config.selectable && canSelect ? 0 : undefined} aria-selected={config.selectable && canSelect ? selectedIds.has(record.id) : undefined} onClick={config.selectable && canSelect ? () => toggleSelection(record.id) : undefined} onKeyDown={config.selectable && canSelect ? (event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      toggleSelection(record.id);
+                    }
+                  } : undefined}>
+                    {config.selectable && <td className="selection-column px-2 py-2"><input type="checkbox" className="accent-[#496d2e]" aria-label={`Pilih ${record.name || record.store || record.id}`} checked={selectedIds.has(record.id)} disabled={!canSelect} onChange={() => toggleSelection(record.id)} onClick={(event) => event.stopPropagation()} /></td>}
+                    {config.renderRecord(record, {
+                      onEdit: remoteData?.onEditRecord ? () => remoteData.onEditRecord?.(record) : undefined,
+                      onDelete: remoteData?.onDeleteRecord ? () => remoteData.onDeleteRecord?.(record) : undefined,
+                      isBusy: Boolean(remoteData?.isMutating),
+                      isProtected: !canSelect,
+                    })}
+                  </tr>
+                );
+              })}
             {!visibleRecords.length && (
               <tr>
                 <td
@@ -293,7 +331,7 @@ export default function ManagementTable<TCustomData = RecordEntry>({
                   role={remoteData?.isLoading || remoteData?.error ? "status" : undefined}
                 >
                   {remoteData?.isLoading
-                    ? "Memuat daftar toko..."
+                    ? "Memuat data..."
                     : remoteData?.error
                       ? remoteData.error
                       : records.length === 0
@@ -305,7 +343,7 @@ export default function ManagementTable<TCustomData = RecordEntry>({
           </tbody>
         </table>
       </div>
-      {config.selectable && <div className="promo-actions mt-2 flex flex-wrap items-center gap-2"><span className="selected-promo-count mr-auto text-[9px] text-[#66705e]" aria-live="polite">Terpilih: <strong className="text-[#222a21]">{selectedIds.size}</strong></span><button className="delete-promos-button inline-flex min-h-8 items-center gap-1.5 rounded-md border border-red-200 bg-white px-3 text-[9px] font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50" type="button" disabled={!selectedIds.size} onClick={deleteSelected}><i className="fa-solid fa-trash-can" /> {config.deleteLabel || "Hapus Promo"}</button><button className="bulk-action-button inline-flex min-h-8 items-center gap-1.5 rounded-md border border-[#dce8c5] bg-white px-3 text-[9px] font-semibold text-[#496d2e] hover:bg-[#edf5d7] disabled:cursor-not-allowed disabled:opacity-50" type="button" disabled={!selectedIds.size} onClick={toggleSelectedStatus}><i className="fa-regular fa-circle-pause" /> Nonaktifkan Sementara</button></div>}
+      {config.selectable && <div className="promo-actions mt-2 flex flex-wrap items-center gap-2"><span className="selected-promo-count mr-auto text-[9px] text-[#66705e]" aria-live="polite">Terpilih: <strong className="text-[#222a21]">{selectableSelectedRecords.length}</strong></span><button className="delete-promos-button inline-flex min-h-8 items-center gap-1.5 rounded-md border border-red-200 bg-white px-3 text-[9px] font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50" type="button" disabled={!selectableSelectedRecords.length || remoteData?.isMutating} onClick={deleteSelected}><i className="fa-solid fa-trash-can" /> {config.deleteLabel || "Hapus Promo"}</button><button className="bulk-action-button inline-flex min-h-8 items-center gap-1.5 rounded-md border border-[#dce8c5] bg-white px-3 text-[9px] font-semibold text-[#496d2e] hover:bg-[#edf5d7] disabled:cursor-not-allowed disabled:opacity-50" type="button" disabled={!selectableSelectedRecords.length || remoteData?.isMutating} onClick={toggleSelectedStatus}><i className="fa-regular fa-circle-pause" /> Nonaktifkan Sementara</button></div>}
       {config.customAddModal ? (
         config.customAddModal({
           isOpen: isCustomModalOpen,

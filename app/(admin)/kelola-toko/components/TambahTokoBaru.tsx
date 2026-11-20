@@ -69,7 +69,7 @@ export default function TambahTokoBaru({
   const [nomorBlok, setNomorBlok] = useState(initialData?.zone ?? "");
 
   // 2. Status & Operasional
-  const [statusKios, setStatusKios] = useState<TokoData["status"]>(initialData?.status ?? (canEditStatus ? "Buka" : "Menunggu Verifikasi"));
+  const [statusKios, setStatusKios] = useState<TokoData["status"]>(initialData?.status ?? "Buka");
   const [jamBuka, setJamBuka] = useState(initialData?.operatingHours.split(" - ")[0] ?? "06:00");
   const [jamTutup, setJamTutup] = useState(initialData?.operatingHours.split(" - ")[1] ?? "17:00");
   const [tahunBerdiri, setTahunBerdiri] = useState(initialData?.establishedYear ?? "");
@@ -114,7 +114,7 @@ export default function TambahTokoBaru({
     setNamaPemilik("");
     setKategori(categoryOptions[0]?.name ?? "");
     setNomorBlok("");
-    setStatusKios(canEditStatus ? "Buka" : "Menunggu Verifikasi");
+    setStatusKios(initialData?.status ?? "Buka");
     setJamBuka("06:00");
     setJamTutup("17:00");
     setTahunBerdiri("");
@@ -748,7 +748,7 @@ export default function TambahTokoBaru({
           </section>
 
           {/* ═════════ 5. KATALOG PRODUK / MENU AWAL ═════════ */}
-          {!isEditing && <section className="rounded-2xl border border-[#e5edd8] bg-[#fdfefc] p-4.5 sm:p-5 shadow-xs">
+          <section className="rounded-2xl border border-[#e5edd8] bg-[#fdfefc] p-4.5 sm:p-5 shadow-xs">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-[#edf2e4] pb-3">
               <div className="flex items-center gap-2.5">
                 <span className="flex size-6 items-center justify-center rounded-full bg-[#eef5df] text-[11px] font-bold text-[#496d2e]">
@@ -836,7 +836,7 @@ export default function TambahTokoBaru({
                         </label>
                         <input
                           type="text"
-                          required
+                          required={!isEditing || item.nama.trim() !== ""}
                           placeholder="Contoh: Kismis / Keju / Lemper"
                           value={item.nama}
                           onChange={(e) => handleUpdateMenuItem(item.id, "nama", e.target.value)}
@@ -854,7 +854,7 @@ export default function TambahTokoBaru({
                           </span>
                           <input
                             type="text"
-                            required
+                            required={!isEditing || item.nama.trim() !== ""}
                             placeholder="7.000"
                             value={formatRupiah(item.harga)}
                             onChange={(e) =>
@@ -888,7 +888,7 @@ export default function TambahTokoBaru({
                 </div>
               ))}
             </div>
-          </section>}
+          </section>
         </div>
 
         {/* ── FOOTER ACTIONS ───────────────────────────────────── */}
