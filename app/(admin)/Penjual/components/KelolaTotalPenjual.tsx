@@ -33,7 +33,7 @@ const summaries = [
 export default function KelolaTotalPenjual() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handleSave = (_data: PedagangData) => {
+  const handleSave = () => {
     // Data already saved to localStorage inside TambahPedagangBaru
     setIsModalOpen(false);
   };

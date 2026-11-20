@@ -22,7 +22,10 @@ export const Seo = ({
     {/* Open Graph */}
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    {url && <meta property="og:url" content={url} />}
+      {url ? <meta property="og:url" content={url} /> : null}
+  {image ? <meta property="og:image" content={image} /> : null}
+  {url ? <link rel="canonical" href={url} /> : null}
+  <meta name="robots" content="index,follow" />
     {image && <meta property="og:image" content={image} />}
 
     {/* Twitter Card */}

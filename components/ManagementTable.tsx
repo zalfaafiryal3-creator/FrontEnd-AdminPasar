@@ -307,7 +307,7 @@ export default function ManagementTable<TCustomData = RecordEntry>({
               {visibleRecords.map((record) => {
                 const canSelect = isSelectableRecord(record);
                 return (
-                  <tr key={record.id} className={`border-t border-[#edf1e7] ${config.selectable && canSelect ? "cursor-pointer hover:bg-[#f6f9ef] focus-visible:outline-2 focus-visible:outline-[#496d2e]" : "hover:bg-[#fbfcf7]"} ${selectedIds.has(record.id) ? "selected-promo bg-[#f2f7e5]" : ""}`} tabIndex={config.selectable && canSelect ? 0 : undefined} aria-selected={config.selectable && canSelect ? selectedIds.has(record.id) : undefined} onClick={config.selectable && canSelect ? () => toggleSelection(record.id) : undefined} onKeyDown={config.selectable && canSelect ? (event) => {
+                  <tr key={record.id} className={`border-t border-[#edf1e7] ${config.selectable && canSelect ? "cursor-pointer hover:bg-[#f6f9ef] focus-visible:outline-2 focus-visible:outline-[#496d2e]" : "hover:bg-[#fbfcf7]"} ${selectedIds.has(record.id) ? "selected-promo bg-[#f2f7e5]" : ""}`} tabIndex={config.selectable && canSelect ? 0 : undefined} /* aria-selected removed for accessibility */ onClick={config.selectable && canSelect ? () => toggleSelection(record.id) : undefined} onKeyDown={config.selectable && canSelect ? (event) => {
                     if (event.key === "Enter" || event.key === " ") {
                       event.preventDefault();
                       toggleSelection(record.id);
