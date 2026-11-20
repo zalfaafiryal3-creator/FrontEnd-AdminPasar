@@ -61,7 +61,7 @@ export default function AdminLayout({ activePage, label, children }: AdminLayout
             ${sidebarCollapsed ? "flex-col gap-1 justify-center" : ""}`}
         >
           <div className="logo-roof-icon h-10 w-10 shrink-0 overflow-hidden">
-            <img
+            <Image src="/assets/logo-pasar.png" alt="Pasar Oro-Oro Dowo" width={40} height={40} className="h-full w-full object-contain object-center"/>
               className="h-full w-full object-contain object-center"
               src="/assets/logo-pasar.png"
               alt="Pasar Oro-Oro Dowo"

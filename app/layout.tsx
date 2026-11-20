@@ -7,10 +7,12 @@ export const metadata: Metadata = {
   description: "Panel administrasi Pasar Oro-Oro Dowo",
 };
 
+import { Seo } from "../components/Seo";
+
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="id" className="min-w-[320px] bg-[#e9f2d2]">
-      <head>
+      <head><Seo />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
