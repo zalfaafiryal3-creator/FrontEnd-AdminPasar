@@ -138,6 +138,7 @@ export default function Penjual() {
   const [statusFilter, setStatusFilter] = useState("");
   const [sortFilter, setSortFilter] = useState("Pengajuan Terbaru");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingPedagang, setEditingPedagang] = useState<PedagangData | null>(null);
 
   // Sync sellers with stores from backend/MySQL or cache
   useEffect(() => {
@@ -206,7 +207,7 @@ export default function Penjual() {
   };
 
   const handleSavePedagang = (data: PedagangData) => {
-    const newSeller = {
+    const updatedSeller = {
       id: data.id || `seller-${Date.now()}`,
       name: data.name,
       shop: data.shop,
@@ -216,8 +217,12 @@ export default function Penjual() {
       email: data.email ?? "",
       type: data.type ?? "Zona Kuliner",
     };
-    const updated = [newSeller, ...sellers.filter((s) => s.id !== newSeller.id)];
+    const isExisting = sellers.some((s) => s.id === updatedSeller.id);
+    const updated = isExisting
+      ? sellers.map((s) => (s.id === updatedSeller.id ? updatedSeller : s))
+      : [updatedSeller, ...sellers];
     persistSellers(updated);
+    setEditingPedagang(null);
   };
 
   const handleToggleSellerStatus = () => {
@@ -236,7 +241,7 @@ export default function Penjual() {
             <h1 className="mb-1 text-[21px] font-bold leading-[1.3] text-[#594045] max-[760px]:text-[19px] max-[560px]:text-[17px] max-[390px]:text-base">Kelola Data Penjual &amp; Lapak</h1>
             <p className="m-0 text-xs leading-[1.5] text-[#594045] max-[760px]:text-[11px] max-[560px]:text-[10px]">Pencatatan dan pengelolaan informasi pedagang, lokasi lapak/kios aktif, serta informasi kontak pasar rakyat Oro-Oro Dowo Malang.</p>
           </div>
-          <button className="inline-flex min-h-9 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-[9px] border-0 bg-[#4b6515] px-4 py-2 text-[11px] font-semibold text-white [font-family:inherit] hover:bg-[#3e5510] focus-visible:outline-2 focus-visible:outline-[#fbbf24] focus-visible:outline-offset-2 max-[760px]:self-start" type="button" onClick={() => setIsModalOpen(true)}><i className="fa-solid fa-plus" /> Daftarkan Pedagang Baru</button>
+          <button className="inline-flex min-h-9 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-[9px] border-0 bg-[#4b6515] px-4 py-2 text-[11px] font-semibold text-white [font-family:inherit] hover:bg-[#3e5510] focus-visible:outline-2 focus-visible:outline-[#fbbf24] focus-visible:outline-offset-2 max-[760px]:self-start" type="button" onClick={() => { setEditingPedagang(null); setIsModalOpen(true); }}><i className="fa-solid fa-plus" /> Daftarkan Pedagang Baru</button>
         </div>
 
         <section className="mb-4 grid grid-cols-3 gap-3 max-[760px]:grid-cols-1 max-[760px]:gap-2" aria-label="Ringkasan penjual">
@@ -311,7 +316,21 @@ export default function Penjual() {
                     <span className="shrink-0 rounded-md bg-white/70 px-2 py-1 text-[9px] font-semibold text-[#4b6515]">{seller.block}</span>
                   </div>
                   <p className="mb-[9px] mt-0 overflow-visible whitespace-normal text-[9px] leading-[1.45] text-[#594045] [overflow-wrap:anywhere] max-[980px]:text-[8px] max-[560px]:text-[9px]"><i className="fa-solid fa-phone text-[#4b6515]" /> {seller.phone} <span className="px-1 text-[#a49a9c]">•</span> <i className="fa-regular fa-envelope text-[#4b6515]" /> {seller.email}</p>
-                  <button className="inline-flex min-h-[26px] cursor-pointer items-center gap-1.5 rounded-[7px] border-0 bg-[#594045] px-[10px] py-[5px] text-[9px] font-semibold leading-[1.3] text-white transition-[background-color,transform] duration-150 hover:-translate-y-px hover:bg-[#4b6515] focus-visible:outline-2 focus-visible:outline-[#4b6515] focus-visible:outline-offset-[3px]" type="button" onClick={(event) => event.stopPropagation()}><i className="fa-regular fa-address-card" /> Detail &amp; Edit Data Lapak</button>
+                  <button className="inline-flex min-h-[26px] cursor-pointer items-center gap-1.5 rounded-[7px] border-0 bg-[#594045] px-[10px] py-[5px] text-[9px] font-semibold leading-[1.3] text-white transition-[background-color,transform] duration-150 hover:-translate-y-px hover:bg-[#4b6515] focus-visible:outline-2 focus-visible:outline-[#4b6515] focus-visible:outline-offset-[3px]" type="button" onClick={(event) => {
+                    event.stopPropagation();
+                    setEditingPedagang({
+                      id: seller.id,
+                      name: seller.name,
+                      phone: seller.phone,
+                      shop: seller.shop,
+                      block: seller.block,
+                      status: seller.status === "Lapak Buka" ? "Aktif" : seller.status === "Tutup Sementara" ? "Nonaktif" : "Menunggu Verifikasi",
+                      photoUrl: null,
+                      email: seller.email,
+                      type: seller.type,
+                    });
+                    setIsModalOpen(true);
+                  }}><i className="fa-regular fa-address-card" /> Detail &amp; Edit Data Lapak</button>
                 </article>
               );
             })}
@@ -333,8 +352,9 @@ export default function Penjual() {
 
       <TambahPedagangBaru
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => { setIsModalOpen(false); setEditingPedagang(null); }}
         onSave={handleSavePedagang}
+        initialData={editingPedagang}
       />
     </AdminLayout>
   );

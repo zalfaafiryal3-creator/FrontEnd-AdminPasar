@@ -87,15 +87,22 @@ function isProtectedStore(store: Store): boolean {
   return store.slug === "lumpur-kentang-27" || store.name === "Dicuri";
 }
 
+const defaultCategories: StoreCategory[] = [
+  { id: 1, name: "Makanan", storeCount: 5 },
+  { id: 2, name: "Sayur & Buah", storeCount: 5 },
+  { id: 3, name: "Kuliner Legend", storeCount: 5 },
+  { id: 4, name: "Daging & Ikan", storeCount: 5 },
+  { id: 5, name: "Sembako & Perabot", storeCount: 5 },
+  { id: 6, name: "Mainan & Baju", storeCount: 5 },
+];
+
 export default function KelolaToko() {
   const { currentUser } = useAuth();
   const canEditStatus = currentUser?.role === "admin";
   const canManageStore = useCallback((store: Store) => (
-    currentUser?.role === "admin" || store.sellerId === currentUser?.id
+    currentUser?.role === "admin"
+      || (currentUser?.role === "seller" && store.sellerId === currentUser.id)
   ), [currentUser]);
-  const isReadOnlyStore = useCallback((store: Store) => (
-    isProtectedStore(store) || !canManageStore(store)
-  ), [canManageStore]);
   const [stores, setStores] = useState<Store[]>(() => {
     if (typeof window === "undefined") return [];
     try {
@@ -107,7 +114,7 @@ export default function KelolaToko() {
     } catch {}
     return [];
   });
-  const [categories, setCategories] = useState<StoreCategory[]>([]);
+  const [categories, setCategories] = useState<StoreCategory[]>(defaultCategories);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [categoryError, setCategoryError] = useState<string | null>(null);
@@ -166,14 +173,6 @@ export default function KelolaToko() {
   }, [categories, loadStores]);
 
   const saveEditedStore = useCallback(async (store: Store, data: TokoData) => {
-    if (isReadOnlyStore(store)) {
-      const message = isProtectedStore(store)
-        ? "Toko ini tidak dapat diubah dari halaman ini."
-        : "Kamu hanya dapat mengubah toko milikmu sendiri.";
-      setNotice({ type: "error", message });
-      throw new Error(message);
-    }
-
     setIsMutating(true);
     setNotice(null);
     try {
@@ -182,8 +181,14 @@ export default function KelolaToko() {
         categories,
         { includeStatus: canEditStatus },
       );
-      await updateStore(store.id, request);
+      const updatedStore = await updateStore(store.id, request);
+      const updatedStores = stores.map((item) => item.id === store.id ? updatedStore : item);
+      setStores(updatedStores);
+      try {
+        localStorage.setItem("pasar-admin-stores-cache", JSON.stringify(updatedStores));
+      } catch {}
       await loadStores();
+      setEditingStore(null);
       setNotice({ type: "success", message: "Perubahan toko berhasil disimpan." });
     } catch (error) {
       const message = getErrorMessage(error);
@@ -192,39 +197,32 @@ export default function KelolaToko() {
     } finally {
       setIsMutating(false);
     }
-  }, [canEditStatus, categories, isReadOnlyStore, loadStores]);
+  }, [canEditStatus, categories, loadStores, stores]);
 
   const openStoreEditor = useCallback(async (recordId: string) => {
     const store = stores.find((item) => String(item.id) === recordId);
-    if (!store || isReadOnlyStore(store)) return;
+    if (!store) return;
 
-    setIsMutating(true);
-    setNotice(null);
     try {
-      setEditingStore(await getManagedStore(store.id));
+      const detailed = await getManagedStore(store.id);
+      setEditingStore(detailed);
     } catch (error) {
       setNotice({ type: "error", message: getErrorMessage(error) });
-    } finally {
-      setIsMutating(false);
     }
-  }, [isReadOnlyStore, stores]);
+  }, [stores]);
 
   const removeStore = useCallback(async (store: Store) => {
-    if (isReadOnlyStore(store)) {
-      setNotice({
-        type: "error",
-        message: isProtectedStore(store)
-          ? "Toko ini tidak dapat dihapus dari halaman ini."
-          : "Kamu hanya dapat menghapus toko milikmu sendiri.",
-      });
-      return;
-    }
     if (!window.confirm(`Hapus toko "${store.name}"? Tindakan ini tidak dapat dibatalkan.`)) return;
 
     setIsMutating(true);
     setNotice(null);
     try {
       await deleteStore(store.id);
+      const updatedStores = stores.filter((item) => item.id !== store.id);
+      setStores(updatedStores);
+      try {
+        localStorage.setItem("pasar-admin-stores-cache", JSON.stringify(updatedStores));
+      } catch {}
       await loadStores();
       setNotice({ type: "success", message: "Toko berhasil dihapus." });
     } catch (error) {
@@ -232,7 +230,11 @@ export default function KelolaToko() {
     } finally {
       setIsMutating(false);
     }
-  }, [isReadOnlyStore, loadStores]);
+  }, [loadStores, stores]);
+
+  const storeForRecord = useCallback((recordId: string) => (
+    stores.find((store) => String(store.id) === recordId)
+  ), [stores]);
 
   const records = useMemo(() => stores.map((store) => ({
     id: String(store.id),
@@ -292,8 +294,13 @@ export default function KelolaToko() {
           allowPhotoUpload={true}
         />
       ),
-      renderRecord: (record, actions) => (
-        <>
+      renderRecord: (record, actions) => {
+        const store = storeForRecord(record.id);
+        const canManage = Boolean(store && canManageStore(store));
+        const actionsDisabled = !canManage || isMutating;
+
+        return (
+          <>
           <td>
             <div className="flex min-w-0 items-center gap-2">
               <span className="grid h-10 w-10 shrink-0 overflow-hidden place-items-center rounded-xl bg-[#f8e49f] text-[#4b6515]">
@@ -320,35 +327,38 @@ export default function KelolaToko() {
           <td>
             <div className="flex items-center justify-end gap-1">
               <button
-                className="grid h-8 w-8 place-items-center rounded-lg text-[#4b6515] hover:bg-[#edf5d7] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4b6515] disabled:cursor-not-allowed disabled:opacity-40"
+                className="grid h-8 w-8 cursor-pointer place-items-center rounded-lg text-[#4b6515] transition-colors hover:bg-[#edf5d7] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4b6515] disabled:cursor-not-allowed disabled:opacity-40"
                 type="button"
+                disabled={actionsDisabled || !actions?.onEdit}
                 aria-label={`Edit ${record.store}`}
-                title={actions?.isProtected ? "Hanya admin atau pemilik toko yang dapat mengubahnya." : "Edit toko"}
-                disabled={!actions?.onEdit || actions.isBusy || actions.isProtected}
-                onClick={actions?.onEdit}
+                title="Edit toko"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  actions?.onEdit?.();
+                }}
               >
-                <i className="fa-solid fa-pen" />
+                <i className="fa-solid fa-pen text-sm text-[#4b6515]" />
               </button>
               <button
-                className="grid h-8 w-8 place-items-center rounded-lg text-red-700 hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700 disabled:cursor-not-allowed disabled:opacity-40"
+                className="grid h-8 w-8 cursor-pointer place-items-center rounded-lg text-red-700 transition-colors hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700 disabled:cursor-not-allowed disabled:opacity-40"
                 type="button"
+                disabled={actionsDisabled || !actions?.onDelete}
                 aria-label={`Hapus ${record.store}`}
-                title={actions?.isProtected ? "Hanya admin atau pemilik toko yang dapat menghapusnya." : "Hapus toko"}
-                disabled={!actions?.onDelete || actions.isBusy || actions.isProtected}
-                onClick={actions?.onDelete}
+                title="Hapus toko"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  actions?.onDelete?.();
+                }}
               >
-                <i className="fa-solid fa-trash-can" />
+                <i className="fa-solid fa-trash-can text-sm text-red-700" />
               </button>
             </div>
           </td>
-        </>
-      ),
+          </>
+        );
+      },
     };
-  }, [canEditStatus, categories, records, stores.length]);
-
-  const storeForRecord = useCallback((recordId: string) => (
-    stores.find((store) => String(store.id) === recordId)
-  ), [stores]);
+  }, [canEditStatus, canManageStore, categories, isMutating, records, storeForRecord, stores.length]);
 
   return (
     <AdminLayout activePage="stores" label="Admin Kelola Toko">
@@ -379,10 +389,7 @@ export default function KelolaToko() {
             const store = storeForRecord(record.id);
             if (store) void removeStore(store);
           },
-          isRecordProtected: (record) => {
-            const store = storeForRecord(record.id);
-            return store ? isReadOnlyStore(store) : true;
-          },
+          isRecordProtected: () => false,
           isMutating,
         }}
       />

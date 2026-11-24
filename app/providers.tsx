@@ -7,7 +7,8 @@ import { AuthProvider, canAccessPath, getDefaultPath, useAuth } from "../lib/use
 function AuthGuard({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { currentUser, isInitialized } = useAuth();  const isPublicAuthPage = pathname === "/login" || pathname === "/register";
+  const { currentUser, isInitialized } = useAuth();
+  const isPublicAuthPage = pathname === "/login";
   const canAccessCurrentPath = currentUser
     ? canAccessPath(currentUser.role, pathname)
     : false;

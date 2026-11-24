@@ -29,6 +29,7 @@ type TambahPedagangBaruProps = {
   isOpen: boolean;
   onClose: () => void;
   onSave: (data: PedagangData) => void;
+  initialData?: PedagangData | null;
 };
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -111,6 +112,7 @@ export default function TambahPedagangBaru({
   isOpen,
   onClose,
   onSave,
+  initialData,
 }: TambahPedagangBaruProps) {
   // Form fields
   const [namaLengkap, setNamaLengkap] = useState("");
@@ -130,6 +132,24 @@ export default function TambahPedagangBaru({
 
   const photoInputRef = useRef<HTMLInputElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      if (initialData) {
+        setNamaLengkap(initialData.name || "");
+        setNoTelepon(initialData.phone || "");
+        setStatusAkun(initialData.status || "Menunggu Verifikasi");
+        setPhotoPreview(initialData.photoUrl || null);
+      } else {
+        setNamaLengkap("");
+        setNoTelepon("");
+        setSelectedStore("");
+        setStatusAkun("Menunggu Verifikasi");
+        setPhotoPreview(null);
+        setPhotoFile(null);
+      }
+    }
+  }, [isOpen, initialData]);
 
   // Load stores from localStorage & backend on mount / open
   useEffect(() => {
@@ -232,22 +252,22 @@ export default function TambahPedagangBaru({
 
       const storeObj = stores.find((s) => s.id === selectedStore);
       const payload: PedagangData = {
-        id: `seller-${Date.now()}`,
+        id: initialData?.id || `seller-${Date.now()}`,
         name: namaLengkap.trim(),
         phone: noTelepon.trim(),
-        shop: storeObj?.store ?? "Kios Mandiri",
-        block: storeObj?.zone ?? "–",
+        shop: storeObj?.store ?? initialData?.shop ?? "Kios Mandiri",
+        block: storeObj?.zone ?? initialData?.block ?? "–",
         status: statusAkun,
-        photoUrl,
+        photoUrl: photoUrl || initialData?.photoUrl || null,
       };
 
       const existing: PedagangData[] = JSON.parse(
         localStorage.getItem("pasar-admin-sellers") || "[]"
       );
-      localStorage.setItem(
-        "pasar-admin-sellers",
-        JSON.stringify([...existing, payload])
-      );
+      const updated = initialData
+        ? existing.map((item) => (item.id === initialData.id ? payload : item))
+        : [...existing, payload];
+      localStorage.setItem("pasar-admin-sellers", JSON.stringify(updated));
 
       onSave(payload);
       handleCancel();

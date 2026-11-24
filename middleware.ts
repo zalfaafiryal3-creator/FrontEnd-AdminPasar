@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 const legacyRedirects: Record<string, string> = {
+  "/register": "/login",
   "/Penjual": "/penjual",
   "/Dashboard": "/dashboard",
   "/Kategori": "/kategori",
@@ -24,6 +25,7 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/register",
     "/Penjual",
     "/Dashboard",
     "/Kategori",

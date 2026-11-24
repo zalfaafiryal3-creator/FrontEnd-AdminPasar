@@ -54,8 +54,8 @@ function readStorage<T = Menu>(key: string): T[] {
 function loadMenus(): Menu[] {
   const deletedIds = new Set(readStorage<string>("pasar-admin-deleted-menus"));
   const defaults = defaultMenus.filter((menu) => !deletedIds.has(menu.id));
-  const saved = readStorage<{ id?: string; category: string; item: string }>("pasar-admin-categories")
-    .map((menu) => ({ ...menu, id: menu.id || crypto.randomUUID(), details: menu.category, icon: "✣" }))
+  const saved = readStorage<{ id?: string; category: string; item: string; details?: string; icon?: string; leaf?: boolean }>("pasar-admin-categories")
+    .map((menu) => ({ ...menu, id: menu.id || crypto.randomUUID(), details: menu.details || menu.category, icon: menu.icon || "✣" }))
     .filter((menu) => !deletedIds.has(menu.id));
 
   return [...defaults, ...saved];
@@ -147,15 +147,16 @@ export default function Kategori() {
       setCreatedCategories(updatedCategories);
     }
 
-    if (item) {
-      const menu = {
+    if (dialogMode.type === "store" && item) {
+      const details = String(formData.get("details") || "").trim() || category;
+      const menu: Menu = {
         id: crypto.randomUUID(),
         category,
         item,
-        details: category,
+        details,
         icon: "✣",
       };
-      const savedMenus = [...readStorage("pasar-admin-categories"), { id: menu.id, category: menu.category, item: menu.item }];
+      const savedMenus = [...readStorage<Menu>("pasar-admin-categories"), menu];
       localStorage.setItem("pasar-admin-categories", JSON.stringify(savedMenus));
       setMenus((current) => [...current, menu]);
     }
@@ -191,9 +192,9 @@ export default function Kategori() {
           <div className="mb-2 text-[9px] font-semibold tracking-[0.12em] text-[#74666a]">ADMIN PANEL &nbsp;›&nbsp; KATEGORISASI</div>
           <div className="mb-4 flex flex-wrap items-start justify-between gap-4 [&_h1]:mb-1 [&_h1]:text-[21px] [&_h1]:leading-[1.3] [&_h1]:text-[#594045] [&_p]:text-[13px] [&_p]:leading-relaxed [&_p]:text-[#594045] max-[760px]:[&_h1]:text-[19px] max-[760px]:[&_p]:text-xs max-[560px]:gap-2"><div><h1>Kelola Kategori Toko Pasar Oro-Oro Dowo</h1><p>Kelola klasifikasi struktur kategori, dan penataan lapak pedagang di kawasan Pasar Oro-Oro Dowo Malang demi penataan pasar tradisional bersih berstandar SNI.</p></div><button className="inline-flex min-h-9 items-center gap-[7px] rounded-[9px] bg-[#c2dc80] px-[13px] py-2 text-xs text-[#594045] shadow-[0_3px_7px_rgba(75,101,21,0.12)] transition-all hover:-translate-y-px hover:bg-[#b5d36b] hover:shadow-[0_5px_10px_rgba(75,101,21,0.16)] focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-[#4b6515] max-[560px]:ml-auto max-[560px]:min-h-8 max-[560px]:px-2.5 max-[560px]:py-[7px] max-[560px]:text-[10px]" type="button" onClick={() => { setDialogMode({ type: "category" }); setFormError(""); dialogRef.current?.showModal(); }}><i className="fa-solid fa-plus"/> Tambah Kategori Baru</button></div>
           <section className="management-summary category-summary mb-4 grid grid-cols-4 gap-3 max-[980px]:grid-cols-2 max-[560px]:grid-cols-1" aria-label="Ringkasan kategori">
-            <article className="summary-card flex min-w-0 items-center justify-between rounded-2xl border border-[#c2dc80]/60 bg-[#edf5d7] p-4 text-[#594045] shadow-sm"><div className="flex min-w-0 flex-col gap-1"><span className="text-[9px] font-bold tracking-wide text-[#4b6515]">TOTAL TOKO</span><strong className="text-xl">{menus.length}</strong><small className="text-[10px] text-[#74666a]">{menus.length} toko terdaftar</small></div><i className="fa-solid fa-store text-lg text-[#4b6515]" /></article>
+            <article className="summary-card flex min-w-0 items-center justify-between rounded-2xl border border-[#c2dc80]/60 bg-[#edf5d7] p-4 text-[#594045] shadow-sm"><div className="flex min-w-0 flex-col gap-1"><span className="text-[9px] font-bold tracking-wide text-[#4b6515]">TOTAL TOKO</span><strong className="text-xl">{menus.length}</strong><small className="text-[10px] text-[#74666a]">{menus.length} Aktif • bulan ini</small></div><i className="fa-solid fa-store text-lg text-[#4b6515]" /></article>
             <article className="summary-card amber flex min-w-0 items-center justify-between rounded-2xl border border-[#fbbf24]/40 bg-[#fff0c2] p-4 text-[#594045] shadow-sm"><div className="flex min-w-0 flex-col gap-1"><span className="text-[9px] font-bold tracking-wide text-[#4b6515]">TOTAL KATEGORI</span><strong className="text-xl">{categoryNames.length} <small className="text-[10px] font-normal">kategori aktif</small></strong><small className="text-[10px] text-[#74666a]">Zonasi Standar Revitalisasi SNI</small></div><i className="fa-solid fa-shop text-lg text-[#4b6515]" /></article>
-            <article className="summary-card flex min-w-0 items-center justify-between rounded-2xl border border-[#c2dc80]/60 bg-[#edf5d7] p-4 text-[#594045] shadow-sm"><div className="flex min-w-0 flex-col gap-1"><span className="text-[9px] font-bold tracking-wide text-[#4b6515]">KATEGORI DOMINAN</span><strong className="summary-word text-xl">{dominantCategory?.[0] ?? "—"}</strong><small className="text-[10px] text-[#74666a]">{dominantPercentage}% • {dominantCategory?.[1] ?? 0} Toko</small></div><i className="fa-solid fa-utensils text-lg text-[#4b6515]" /></article>
+            <article className="summary-card flex min-w-0 items-center justify-between rounded-2xl border border-[#c2dc80]/60 bg-[#edf5d7] p-4 text-[#594045] shadow-sm"><div className="flex min-w-0 flex-col gap-1"><span className="text-[9px] font-bold tracking-wide text-[#4b6515]">KATEGORI DOMINAN</span><strong className="summary-word text-xl">{dominantCategory?.[0] ?? "—"}</strong><small className="text-[10px] text-[#74666a]">({dominantPercentage}%) • {dominantCategory?.[1] ?? 0} Toko</small></div><i className="fa-solid fa-utensils text-lg text-[#4b6515]" /></article>
             <article className="summary-card amber flex min-w-0 items-center justify-between rounded-2xl border border-[#fbbf24]/40 bg-[#fff0c2] p-4 text-[#594045] shadow-sm"><div className="flex min-w-0 flex-col gap-1"><span className="text-[9px] font-bold tracking-wide text-[#4b6515]">OKUPANSI ZONASI</span><strong className="text-xl">{occupancyPercentage}% <small className="text-[10px] font-normal">Lapak Terisi</small></strong><small className="occupancy-meter h-1.5 w-full overflow-hidden rounded-full bg-white"><i className="block h-full rounded-full bg-[#4b6515] transition-all" style={{ width: `${occupancyPercentage}%` }} /></small></div><i className="fa-solid fa-store text-lg text-[#4b6515]" /></article>
           </section>
           <div className="management-toolbar category-toolbar mb-3 flex flex-wrap items-center gap-2">
@@ -271,17 +272,39 @@ export default function Kategori() {
         </main>
       <dialog className="m-auto max-h-[90vh] max-w-[min(92vw,420px)] rounded-2xl border border-[rgba(194,220,128,0.7)] bg-white text-[#594045] shadow-2xl backdrop:bg-black/40" ref={dialogRef}>
         <form className="create-form w-[min(92vw,420px)] space-y-4 p-6" onSubmit={addMenu}>
-          <h2 className="text-lg font-bold text-[#594045]">{dialogMode.type === "category" ? "Tambah Kategori Baru" : `Tambah Toko ke ${dialogMode.category}`}</h2>
+          <h2 className="text-lg font-bold text-[#594045]">
+            {dialogMode.type === "category" ? "Tambah Kategori Baru" : `Tambah Toko ke Kategori ${dialogMode.category}`}
+          </h2>
           <div className="create-fields grid gap-3 [&_input]:rounded-lg [&_input]:border [&_input]:border-[rgba(194,220,128,0.75)] [&_input]:p-2 [&_input]:text-[#594045] [&_input:focus]:border-[#4b6515] [&_input:focus]:outline-2 [&_input:focus]:outline-[rgba(194,220,128,0.45)]">
             {dialogMode.type === "category" ? (
-              <label className="grid gap-1 text-xs font-semibold">Nama Kategori<input className="rounded-lg border border-[rgba(194,220,128,0.75)] p-2 text-[#594045] focus:border-[#4b6515] focus:outline-2 focus:outline-[rgba(194,220,128,0.45)]" name="category" required /></label>
+              <label className="grid gap-1 text-xs font-semibold">
+                Nama Kategori Baru
+                <input className="rounded-lg border border-[rgba(194,220,128,0.75)] p-2 text-[#594045] focus:border-[#4b6515] focus:outline-2 focus:outline-[rgba(194,220,128,0.45)]" name="category" placeholder="Contoh: Aneka Minuman / Bumbu Dapur" required />
+              </label>
             ) : (
-              <p className="m-0 rounded-lg bg-[#f2f7e4] p-3 text-xs">Kategori: <strong>{dialogMode.category}</strong></p>
+              <>
+                <p className="m-0 rounded-lg bg-[#f2f7e4] p-3 text-xs">
+                  Kategori: <strong>{dialogMode.category}</strong>
+                  <span className="block mt-0.5 text-[11px] text-[#4b6515]">Toko akan langsung dimasukkan ke dalam kolom kategori {dialogMode.category}.</span>
+                </p>
+                <label className="grid gap-1 text-xs font-semibold">
+                  Nama Toko / Dagangan
+                  <input className="rounded-lg border border-[rgba(194,220,128,0.75)] p-2 text-[#594045] focus:border-[#4b6515] focus:outline-2 focus:outline-[rgba(194,220,128,0.45)]" name="item" placeholder="Contoh: Toko Barokah Bu Siti" required />
+                </label>
+                <label className="grid gap-1 text-xs font-semibold">
+                  Deskripsi / Komoditas Produk
+                  <input className="rounded-lg border border-[rgba(194,220,128,0.75)] p-2 text-[#594045] focus:border-[#4b6515] focus:outline-2 focus:outline-[rgba(194,220,128,0.45)]" name="details" placeholder="Contoh: Sembako • Minyak • Beras" />
+                </label>
+              </>
             )}
-            <label className="grid gap-1 text-xs font-semibold">Nama Toko<input className="rounded-lg border border-[rgba(194,220,128,0.75)] p-2 text-[#594045] focus:border-[#4b6515] focus:outline-2 focus:outline-[rgba(194,220,128,0.45)]" name="item" required={dialogMode.type === "store"} /></label>
           </div>
           {formError && <p className="m-0 text-xs text-red-700" role="alert">{formError}</p>}
-          <div className="create-actions flex justify-end gap-2"><button className="cancel-button rounded-lg bg-[#f2f1ec] px-4 py-2 text-xs text-[#594045] hover:bg-[#e7e5dc] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4b6515]" type="button" onClick={() => dialogRef.current?.close()}>Batal</button><button className="add-button rounded-lg bg-[#c2dc80] px-4 py-2 text-xs font-semibold text-[#594045] hover:bg-[#b5d36b] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4b6515]" type="submit">{dialogMode.type === "category" ? "Tambah Kategori" : "Tambah Toko"}</button></div>
+          <div className="create-actions flex justify-end gap-2">
+            <button className="cancel-button rounded-lg bg-[#f2f1ec] px-4 py-2 text-xs text-[#594045] hover:bg-[#e7e5dc] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4b6515]" type="button" onClick={() => dialogRef.current?.close()}>Batal</button>
+            <button className="add-button rounded-lg bg-[#c2dc80] px-4 py-2 text-xs font-semibold text-[#594045] hover:bg-[#b5d36b] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4b6515]" type="submit">
+              {dialogMode.type === "category" ? "Tambah Kategori Baru" : "Tambah Toko"}
+            </button>
+          </div>
         </form>
       </dialog>
     </AdminLayout>

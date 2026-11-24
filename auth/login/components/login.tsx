@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
-import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
@@ -286,21 +285,6 @@ export default function Login() {
                 <i className="fa-solid fa-arrow-right text-[9px]" />
               </button>
 
-              <div className="flex items-center gap-2 pt-0.5">
-                <div className="h-px flex-1 bg-[#eeeee5]" />
-                <span className="text-[7px] text-[#a3a697]">atau</span>
-                <div className="h-px flex-1 bg-[#eeeee5]" />
-              </div>
-
-              <p className="text-center text-[8px] text-[#858b7d]">
-                Belum punya akun?{" "}
-                <Link
-                  href="/register"
-                  className={`font-bold text-[#4b6515] underline underline-offset-2 ${focusRing}`}
-                >
-                  Daftar di sini
-                </Link>
-              </p>
             </form>
           </div>
 

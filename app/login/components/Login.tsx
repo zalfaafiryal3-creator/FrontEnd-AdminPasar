@@ -339,40 +339,6 @@ export default function Login() {
                 )}
               </button>
 
-              {/* Google Sign‑in button */}
-              <button
-                type="button"
-                onClick={() => {
-                  console.log("Google sign‑in clicked – configure client ID");
-                }}
-                className={`flex w-full items-center justify-center gap-2 rounded-[10px] bg-white px-4 py-2 text-sm font-medium text-[#4b6515] shadow-[0_2px_6px_rgba(0,0,0,0.1)] hover:bg-[#f5f5f5] ${focusRing}`}
-              >
-                <svg viewBox="0 0 533.5 544.3" className="h-5 w-5" xmlns="http://www.w3.org/2000/svg">
-                  <path fill="#4285F4" d="M533.5 278.4c0-17.8-1.6-35-4.6-51.6H272v97.7h147.4c-6.4 34.5-25.7 63.7-54.7 83.2v68.9h88.4c51.8-47.8 81.4-118.5 81.4-198.2z"/>
-                  <path fill="#34A853" d="M272 544.3c73.5 0 135.2-24.4 180.2-66.2l-88.4-68.9c-24.4 16.4-55.5 26-91.8 26-70.5 0-130.2-47.5-151.6-111.4H30.5v69.9c45 89.6 138.5 150.6 241.5 150.6z"/>
-                  <path fill="#FBBC05" d="M120.4 323.8c-5.5-16.4-8.6-33.8-8.6-51.8s3.1-35.4 8.6-51.8V150.3H30.5c-18.5 36.7-29 78.9-29 122.7s10.5 86 29 122.7l89.9-69.9z"/>
-                  <path fill="#EA4335" d="M272 107.7c39.9 0 75.8 13.7 104.1 40.6l78.1-78.1C416.1 24.5 349.5 0 272 0 169 0 75.5 61 30.5 150.3l89.9 69.9C141.8 155.2 201.5 107.7 272 107.7z"/>
-                  <path fill="none" d="M0 0h533.5v544.3H0z"/>
-                </svg>
-                <span>Masuk dengan Google</span>
-              </button>
-
-              <div className="flex items-center gap-3 text-[9px] text-[#b3b5aa]">
-                <div className="h-px flex-1 bg-[#e9eadf]" />
-                <span>atau</span>
-                <div className="h-px flex-1 bg-[#e9eadf]" />
-              </div>
-
-              <p className="text-center text-[9px] text-[#858a7b]">
-                Belum punya akun?{" "}
-                <a
-                  href="/register"
-                  className="font-semibold text-[#4b6515] underline underline-offset-2"
-                >
-                  Daftar di sini
-                </a>
-              </p>
-
             </form>
           </div>
 

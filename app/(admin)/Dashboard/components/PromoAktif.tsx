@@ -3,7 +3,12 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getManagedPromotions } from "../../../../lib/promotion-api";
-import { isActivePromoStatus, type AdminPromoRecord } from "../../../../lib/admin-records";
+import {
+  initialPromoRecords,
+  isActivePromoStatus,
+  readAdminRecords,
+  type AdminPromoRecord,
+} from "../../../../lib/admin-records";
 
 export default function PromoAktif() {
   const [promos, setPromos] = useState<AdminPromoRecord[]>([]);
@@ -14,23 +19,35 @@ export default function PromoAktif() {
     getManagedPromotions()
       .then((items) => {
         if (!active) return;
-        setPromos(items.map((promo) => ({
-          id: String(promo.id),
-          store: promo.store,
-          owner: promo.owner,
-          category: promo.category,
-          discount: promo.title,
-          period: `${promo.periodDisplay} • ${promo.operatingHours}`,
-          requirements: promo.terms,
-          quota: promo.quota,
-          status: promo.status,
-          bannerImage: promo.bannerImage ?? undefined,
-        })));
+        if (items.length > 0) {
+          setPromos(items.map((promo) => ({
+            id: String(promo.id),
+            store: promo.store,
+            owner: promo.owner,
+            category: promo.category,
+            discount: promo.title,
+            period: `${promo.periodDisplay} • ${promo.operatingHours}`,
+            requirements: promo.terms,
+            quota: promo.quota,
+            status: promo.status,
+            bannerImage: promo.bannerImage ?? undefined,
+          })));
+        } else {
+          try {
+            const localPromos = readAdminRecords("pasar-admin-promos", initialPromoRecords, "pasar-admin-deleted-promos");
+            setPromos(localPromos);
+          } catch {}
+        }
         setDataError("");
       })
       .catch((error: unknown) => {
         if (active) {
-          setDataError(error instanceof Error ? error.message : "Daftar promo gagal dimuat.");
+          try {
+            const localPromos = readAdminRecords("pasar-admin-promos", initialPromoRecords, "pasar-admin-deleted-promos");
+            setPromos(localPromos);
+          } catch {
+            setDataError(error instanceof Error ? error.message : "Daftar promo gagal dimuat.");
+          }
         }
       });
 
