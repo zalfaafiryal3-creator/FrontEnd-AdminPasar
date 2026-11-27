@@ -6,19 +6,21 @@ export default function Pengaturan() {
   const { currentUser, updateProfile } = useAuth();
   const [username, setUsername] = useState(currentUser?.username ?? "");
   const [email, setEmail] = useState(currentUser?.email ?? "");
-  const [phone, setPhone] = useState("+62 812-3456-7890");
+  const [phone, setPhone] = useState(currentUser?.phone ?? "");
   const role = currentUser?.role === "seller" ? "Penjual" : "Admin";
   const [photo, setPhoto] = useState("");
   const [profileMessage, setProfileMessage] = useState("");
   const [profileError, setProfileError] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const photoInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setUsername(currentUser?.username ?? "");
     setEmail(currentUser?.email ?? "");
+    setPhone(currentUser?.phone ?? "");
   }, [currentUser]);
 
-  function handleProfileSave(event: FormEvent<HTMLFormElement>) {
+  async function handleProfileSave(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!username.trim() || !email.trim()) {
       setProfileError(true);
@@ -31,9 +33,12 @@ export default function Pengaturan() {
       return;
     }
 
-    const error = updateProfile({ username, email });
+    setIsSaving(true);
+    setProfileMessage("");
+    const error = await updateProfile({ username, email, phone });
+    setIsSaving(false);
     setProfileError(Boolean(error));
-    setProfileMessage(error ?? "Profil akun berhasil diperbarui.");
+    setProfileMessage(error ?? "Profil akun berhasil diperbarui ke database.");
   }
 
   function handlePhotoChange(event: ChangeEvent<HTMLInputElement>) {
@@ -55,7 +60,7 @@ export default function Pengaturan() {
   function resetProfile() {
     setUsername(currentUser?.username ?? "");
     setEmail(currentUser?.email ?? "");
-    setPhone("+62 812-3456-7890");
+    setPhone(currentUser?.phone ?? "");
     setProfileMessage("");
     setProfileError(false);
   }
@@ -141,7 +146,7 @@ export default function Pengaturan() {
 
             <div className="mt-4 flex flex-wrap justify-end gap-2">
               <button className="min-h-9 cursor-pointer rounded-[9px] border border-[rgba(194,220,128,0.9)] bg-white px-[14px] py-2 text-[11px] font-semibold text-[#594045] [font-family:inherit] hover:bg-[#f3f7e8] focus-visible:outline-2 focus-visible:outline-[#fbbf24] focus-visible:outline-offset-2" type="button" onClick={resetProfile}>Batal</button>
-              <button className="inline-flex min-h-9 cursor-pointer items-center gap-1.5 rounded-[9px] border-0 bg-[#4b6515] px-[14px] py-2 text-[11px] font-semibold text-white [font-family:inherit] hover:bg-[#3e5510] focus-visible:outline-2 focus-visible:outline-[#fbbf24] focus-visible:outline-offset-2" type="submit"><i className="fa-regular fa-floppy-disk" /> Simpan Perubahan</button>
+              <button className="inline-flex min-h-9 cursor-pointer items-center gap-1.5 rounded-[9px] border-0 bg-[#4b6515] px-[14px] py-2 text-[11px] font-semibold text-white [font-family:inherit] hover:bg-[#3e5510] disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-[#fbbf24] focus-visible:outline-offset-2" type="submit" disabled={isSaving}><i className="fa-regular fa-floppy-disk" /> {isSaving ? "Menyimpan..." : "Simpan Perubahan"}</button>
             </div>
           </form>
         </section>

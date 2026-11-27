@@ -34,6 +34,7 @@ export type AdminSellerRecord = {
 };
 
 export const initialUserRecords: AdminUserRecord[] = [
+  { id: "user-admin-utama", name: "Admin Utama", email: "admin@pasar.com", phone: "+62 812-3456-7890", status: "Aktif", type: "Admin", activity: "Sedang aktif", browser: "Web Admin • Malang" },
   { id: "user-default-mifta-annisa", name: "Mifta Annisa", email: "miftannisa@gmail.com", phone: "+62 812-3456-7890", status: "Aktif", type: "Pelanggan", activity: "2 menit lalu", browser: "Web Browser • Klojen, Malang" },
   { id: "user-default-serli", name: "Serli Maharani", email: "serli.m@gmail.com", phone: "+62 813-9811-4450", status: "Aktif", type: "Pelanggan", activity: "15 menit lalu", browser: "Web Browser • Lowokwaru" },
   { id: "user-default-firyal", name: "Firyal Zalfa", email: "firyal.z@gmail.com", phone: "+62 821-7734-1199", status: "Aktif", type: "Pelanggan", activity: "1 jam lalu", browser: "Web Browser • Sukun, Malang" },

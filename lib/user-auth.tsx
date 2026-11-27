@@ -46,7 +46,7 @@ type AuthContextValue = {
   isInitialized: boolean;
   login: (email: string, password: string, role?: UserRole) => Promise<AuthResult>;
   register: (input: RegisterInput) => Promise<AuthResult>;
-  updateProfile: (user: Pick<AuthUser, "username" | "email">) => string | null;
+  updateProfile: (user: { username: string; email: string; phone?: string }) => Promise<string | null>;
   logout: () => Promise<void>;
 };
 
@@ -57,6 +57,7 @@ const toAuthUser = (user: ApiUser): AuthUser => ({
   username: user.name,
   email: user.email,
   role: user.role,
+  phone: user.phone ?? "",
 });
 
 function errorText(error: unknown, fallback: string): string {
@@ -136,9 +137,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Backend belum punya endpoint ubah profil, jadi belum bisa disimpan.
   const updateProfile = useCallback(
-    () => "Perubahan profil belum tersambung ke backend, sehingga belum bisa disimpan.",
+    async (input: { username: string; email: string; phone?: string }): Promise<string | null> => {
+      try {
+        const data = await apiRequest<{ user: ApiUser }>("/api/auth/me", {
+          method: "PUT",
+          body: {
+            name: input.username.trim(),
+            email: input.email.trim(),
+            ...(input.phone !== undefined ? { phone: input.phone.trim() } : {}),
+          },
+        });
+        setCurrentUser(toAuthUser(data.user));
+        return null;
+      } catch (error) {
+        return errorText(error, "Gagal menyimpan perubahan profil.");
+      }
+    },
     [],
   );
 

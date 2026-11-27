@@ -1,5 +1,15 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import AdminLayout from "../../../../components/AdminLayout";
+import { createCategory } from "../../../../lib/admin-api";
+import { ApiError } from "../../../../lib/api";
+import {
+  createStore,
+  deleteStore,
+  getManagedStores,
+  getStoreCategories,
+  type Store,
+  type StoreCategory,
+} from "../../../../lib/store-api";
 
 type Menu = {
   id: string;
@@ -10,59 +20,33 @@ type Menu = {
   leaf?: boolean;
 };
 
-const defaultMenus: Menu[] = [
-  { id: "menu-lumpur-kentang", category: "Makanan", item: "Lumpur Kentang", details: "Lumpur kentang khas Oro-Oro Dowo", icon: "✣" },
-  { id: "menu-bakso-goreng", category: "Makanan", item: "Bakso Goreng", details: "Bakso goreng ayam Bangkit", icon: "✣" },
-  { id: "menu-klepon", category: "Makanan", item: "Klepon", details: "Klepon gula merah dan kelapa", icon: "✣" },
-  { id: "menu-mendoan", category: "Makanan", item: "Tempe Mendoan", details: "Gorengan • sambal kecap", icon: "✣" },
-  { id: "menu-risol", category: "Makanan", item: "Risol Mayo", details: "Risol isi telur • mayones", icon: "✣" },
-  { id: "menu-sayur-1", category: "Sayur & Buah", item: "Wiwit Sayur", details: "Sawi • kol • kangkung • bayam", icon: "◉", leaf: true },
-  { id: "menu-sayur-2", category: "Sayur & Buah", item: "Buah Segar Bu Rina", details: "Jeruk • apel • pisang • mangga", icon: "◉", leaf: true },
-  { id: "menu-sayur-3", category: "Sayur & Buah", item: "Sayur Organik", details: "Sayuran segar pilihan", icon: "◉", leaf: true },
-  { id: "menu-sayur-4", category: "Sayur & Buah", item: "Toko Buah Berkah", details: "Buah lokal • buah musiman", icon: "◉", leaf: true },
-  { id: "menu-sayur-5", category: "Sayur & Buah", item: "Kangkung Pak Tono", details: "Sayur segar • panen pagi", icon: "◉", leaf: true },
-  { id: "menu-kuliner-1", category: "Kuliner Legend", item: "Soto Ayam Cak Man", details: "Soto ayam kampung • sejak 1980", icon: "✣" },
-  { id: "menu-kuliner-2", category: "Kuliner Legend", item: "Rawon Nguling", details: "Rawon daging sapi khas Malang", icon: "✣" },
-  { id: "menu-kuliner-3", category: "Kuliner Legend", item: "Jamu Bu Darto", details: "Jamu tradisional • racikan asli", icon: "✣" },
-  { id: "menu-kuliner-4", category: "Kuliner Legend", item: "Lumpia Pasar", details: "Camilan tradisional • gurih", icon: "✣" },
-  { id: "menu-kuliner-5", category: "Kuliner Legend", item: "Rawon Pak Joyo", details: "Menu legendaris khas Malang", icon: "✣" },
-  { id: "menu-daging-1", category: "Daging & Ikan", item: "Mbok Ami", details: "Daging sapi • daging kambing", icon: "≋", leaf: true },
-  { id: "menu-daging-2", category: "Daging & Ikan", item: "Pak Slamet", details: "Ayam potong • telur ayam", icon: "≋", leaf: true },
-  { id: "menu-daging-3", category: "Daging & Ikan", item: "Ikan Segar Pak Jo", details: "Ikan laut • ikan air tawar", icon: "≋", leaf: true },
-  { id: "menu-daging-4", category: "Daging & Ikan", item: "Daging Berkah", details: "Daging sapi segar harian", icon: "≋", leaf: true },
-  { id: "menu-daging-5", category: "Daging & Ikan", item: "Bandeng Bu Siti", details: "Ikan bandeng • ikan laut", icon: "≋", leaf: true },
-  { id: "menu-sembako-1", category: "Sembako & Perabot", item: "Toko Barokah", details: "Beras • minyak • gula pasir", icon: "◈" },
-  { id: "menu-sembako-2", category: "Sembako & Perabot", item: "Sembako Bu Ani", details: "Bumbu dapur • kebutuhan pokok", icon: "◈" },
-  { id: "menu-sembako-3", category: "Sembako & Perabot", item: "Perabot Makmur", details: "Alat dapur • perlengkapan rumah", icon: "◈" },
-  { id: "menu-sembako-4", category: "Sembako & Perabot", item: "Warung Bu As", details: "Sembako • kebutuhan harian", icon: "◈" },
-  { id: "menu-sembako-5", category: "Sembako & Perabot", item: "Toko Beras Sumber Rejeki", details: "Beras pilihan • ecer dan grosir", icon: "◈" },
-  { id: "menu-mainan-1", category: "Mainan & Baju", item: "Pak Jun", details: "Seruling • terompet • mobil-mobilan", icon: "◉", leaf: true },
-  { id: "menu-mainan-2", category: "Mainan & Baju", item: "Baju Anak Ceria", details: "Pakaian anak • berbagai ukuran", icon: "◉", leaf: true },
-  { id: "menu-mainan-3", category: "Mainan & Baju", item: "Mainan Pelangi", details: "Mainan edukasi dan boneka", icon: "◉", leaf: true },
-  { id: "menu-mainan-4", category: "Mainan & Baju", item: "Toko Busana Rina", details: "Baju • aksesori • perlengkapan", icon: "◉", leaf: true },
-  { id: "menu-mainan-5", category: "Mainan & Baju", item: "Mainan Anak Cerdas", details: "Permainan edukasi dan boneka", icon: "◉", leaf: true },
-];
-
-function readStorage<T = Menu>(key: string): T[] {
-  try {
-    return JSON.parse(localStorage.getItem(key) || "[]");
-  } catch {
-    return [];
+function iconForCategory(category: string): { icon: string; leaf?: boolean } {
+  const lower = category.toLowerCase();
+  if (lower.includes("sayur") || lower.includes("buah") || lower.includes("mainan") || lower.includes("baju")) {
+    return { icon: "◉", leaf: true };
   }
+  if (lower.includes("daging") || lower.includes("ikan")) {
+    return { icon: "≋", leaf: true };
+  }
+  if (lower.includes("sembako") || lower.includes("perabot")) {
+    return { icon: "◈" };
+  }
+  return { icon: "✣" };
 }
 
-function loadMenus(): Menu[] {
-  const deletedIds = new Set(readStorage<string>("pasar-admin-deleted-menus"));
-  const defaults = defaultMenus.filter((menu) => !deletedIds.has(menu.id));
-  const saved = readStorage<{ id?: string; category: string; item: string; details?: string; icon?: string; leaf?: boolean }>("pasar-admin-categories")
-    .map((menu) => ({ ...menu, id: menu.id || crypto.randomUUID(), details: menu.details || menu.category, icon: menu.icon || "✣" }))
-    .filter((menu) => !deletedIds.has(menu.id));
-
-  return [...defaults, ...saved];
-}
-
-function loadCreatedCategories(): string[] {
-  return readStorage<string>("pasar-admin-category-groups");
+function storeToMenu(store: Store): Menu {
+  const { icon, leaf } = iconForCategory(store.category);
+  const details = store.zone
+    ? `${store.zone}${store.operatingHours ? ` • ${store.operatingHours}` : ""}`
+    : store.description || store.category;
+  return {
+    id: String(store.id),
+    category: store.category,
+    item: store.name,
+    details,
+    icon,
+    leaf,
+  };
 }
 
 function CategoryCard({
@@ -199,8 +183,10 @@ function CategoryCard({
 }
 
 export default function Kategori() {
-  const [menus, setMenus] = useState(loadMenus);
-  const [createdCategories, setCreatedCategories] = useState(loadCreatedCategories);
+  const [menus, setMenus] = useState<Menu[]>([]);
+  const [categories, setCategories] = useState<StoreCategory[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("Semua Kategori");
   const [sortOption, setSortOption] = useState("Urutkan: Toko Terbanyak");
@@ -212,6 +198,26 @@ export default function Kategori() {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const categoryMenuRef = useRef<HTMLDivElement>(null);
   const sortMenuRef = useRef<HTMLDivElement>(null);
+
+  const loadData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const [catList, storeList] = await Promise.all([
+        getStoreCategories(),
+        getManagedStores(),
+      ]);
+      setCategories(catList);
+      setMenus(storeList.map(storeToMenu));
+    } catch {
+      // Abaikan jika gagal memuat sementara
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadData();
+  }, [loadData]);
 
   useEffect(() => {
     function handlePointerDown(event: MouseEvent) {
@@ -229,8 +235,8 @@ export default function Kategori() {
   }, []);
 
   const categoryNames = useMemo(
-    () => [...new Set([...defaultMenus.map((menu) => menu.category), ...createdCategories, ...menus.map((menu) => menu.category)])],
-    [createdCategories, menus],
+    () => [...new Set([...categories.map((cat) => cat.name), ...menus.map((menu) => menu.category)])],
+    [categories, menus],
   );
   const menuCounts = menus.reduce<Record<string, number>>((counts, menu) => {
     counts[menu.category] = (counts[menu.category] ?? 0) + 1;
@@ -252,9 +258,10 @@ export default function Kategori() {
     return groups;
   }, {});
 
-  function addMenu(event: FormEvent<HTMLFormElement>) {
+  async function addMenu(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
     const category = dialogMode.type === "store"
       ? dialogMode.category
       : String(formData.get("category") || "").trim();
@@ -274,27 +281,41 @@ export default function Kategori() {
       return;
     }
 
-    if (dialogMode.type === "category") {
-      const updatedCategories = [...createdCategories, category];
-      localStorage.setItem("pasar-admin-category-groups", JSON.stringify(updatedCategories));
-      setCreatedCategories(updatedCategories);
-    }
+    setIsSubmitting(true);
+    try {
+      if (dialogMode.type === "category") {
+        const created = await createCategory(category);
+        setCategories((current) => [...current, created]);
+      }
 
-    if (dialogMode.type === "store" && item) {
-      const details = String(formData.get("details") || "").trim() || category;
-      const menu: Menu = {
-        id: crypto.randomUUID(),
-        category,
-        item,
-        details,
-        icon: "✣",
-      };
-      const savedMenus = [...readStorage<Menu>("pasar-admin-categories"), menu];
-      localStorage.setItem("pasar-admin-categories", JSON.stringify(savedMenus));
-      setMenus((current) => [...current, menu]);
+      if (dialogMode.type === "store" && item) {
+        const matchedCategory = categories.find(
+          (cat) => cat.name.trim().toLocaleLowerCase("id") === category.toLocaleLowerCase("id"),
+        );
+        if (!matchedCategory) {
+          setFormError(`Kategori "${category}" tidak ditemukan di database.`);
+          setIsSubmitting(false);
+          return;
+        }
+        const details = String(formData.get("details") || "").trim() || category;
+        const createdStore = await createStore({
+          name: item,
+          categoryId: matchedCategory.id,
+          description: details,
+          status: "buka",
+          openTime: "06:00",
+          closeTime: "17:00",
+        });
+        setMenus((current) => [...current, storeToMenu(createdStore)]);
+      }
+
+      form.reset();
+      dialogRef.current?.close();
+    } catch (error) {
+      setFormError(error instanceof ApiError ? error.message : "Gagal menyimpan ke database.");
+    } finally {
+      setIsSubmitting(false);
     }
-    event.currentTarget.reset();
-    dialogRef.current?.close();
   }
 
   function toggleSelection(id: string) {
@@ -306,24 +327,23 @@ export default function Kategori() {
     });
   }
 
-  function deleteSelected() {
-    if (!selectedIds.size || !window.confirm(`Hapus ${selectedIds.size} menu yang dipilih?`)) return;
+  async function deleteSelected() {
+    if (!selectedIds.size || !window.confirm(`Hapus ${selectedIds.size} toko yang dipilih dari database?`)) return;
 
-    const deletedIds = new Set(readStorage<string>("pasar-admin-deleted-menus"));
-    selectedIds.forEach((id) => deletedIds.add(id));
-    localStorage.setItem("pasar-admin-deleted-menus", JSON.stringify([...deletedIds]));
-    localStorage.setItem("pasar-admin-categories", JSON.stringify(
-      readStorage<{ id: string }>("pasar-admin-categories").filter((menu) => !selectedIds.has(menu.id)),
-    ));
-    setMenus((current) => current.filter((menu) => !selectedIds.has(menu.id)));
-    setSelectedIds(new Set());
+    try {
+      await Promise.all([...selectedIds].map((id) => deleteStore(Number(id))));
+      setMenus((current) => current.filter((menu) => !selectedIds.has(menu.id)));
+      setSelectedIds(new Set());
+    } catch (error) {
+      window.alert(error instanceof ApiError ? error.message : "Gagal menghapus toko dari database.");
+    }
   }
 
   return (
     <AdminLayout activePage="categories" label="Admin Kategori">
-        <main className="page-view active management-view category-management flex min-h-[calc(100vh-58px)] flex-col bg-white px-6 py-[17px] pb-[18px] text-[#594045] max-[760px]:px-4 max-[560px]:px-3 max-[390px]:px-2.5">
+        <main className="page-view active management-view category-management flex min-h-[calc(100vh-58px)] flex-col px-6 py-[17px] pb-[18px] text-[#594045] max-[760px]:px-4 max-[560px]:px-3 max-[390px]:px-2.5">
           <div className="mb-2 text-[9px] font-semibold tracking-[0.12em] text-[#74666a]">ADMIN PANEL &nbsp;›&nbsp; KATEGORISASI</div>
-          <div className="mb-4 flex flex-wrap items-start justify-between gap-4 [&_h1]:mb-1 [&_h1]:text-[21px] [&_h1]:leading-[1.3] [&_h1]:text-[#594045] [&_p]:text-[13px] [&_p]:leading-relaxed [&_p]:text-[#594045] max-[760px]:[&_h1]:text-[19px] max-[760px]:[&_p]:text-xs max-[560px]:gap-2"><div><h1>Kelola Kategori Toko Pasar Oro-Oro Dowo</h1><p>Kelola klasifikasi struktur kategori, dan penataan lapak pedagang di kawasan Pasar Oro-Oro Dowo Malang demi penataan pasar tradisional bersih berstandar SNI.</p></div><button className="inline-flex min-h-9 items-center gap-[7px] rounded-[9px] bg-[#c2dc80] px-[13px] py-2 text-xs text-[#594045] shadow-[0_3px_7px_rgba(75,101,21,0.12)] transition-all hover:-translate-y-px hover:bg-[#b5d36b] hover:shadow-[0_5px_10px_rgba(75,101,21,0.16)] focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-[#4b6515] max-[560px]:ml-auto max-[560px]:min-h-8 max-[560px]:px-2.5 max-[560px]:py-[7px] max-[560px]:text-[10px]" type="button" onClick={() => { setDialogMode({ type: "category" }); setFormError(""); dialogRef.current?.showModal(); }}><i className="fa-solid fa-plus"/> Tambah Kategori Baru</button></div>
+          <div className="mb-4 flex flex-wrap items-start justify-between gap-4 [&_h1]:mb-1 [&_h1]:text-[21px] [&_h1]:font-bold [&_h1]:leading-[1.3] [&_h1]:text-[#594045] [&_p]:text-xs [&_p]:leading-relaxed [&_p]:text-[#74666a] max-[760px]:[&_h1]:text-[19px] max-[560px]:[&_h1]:text-[17px] max-[560px]:gap-2"><div><h1>Kelola Kategori Toko Pasar Oro-Oro Dowo</h1><p>Kelola klasifikasi struktur kategori, dan penataan lapak pedagang di kawasan Pasar Oro-Oro Dowo Malang demi penataan pasar tradisional bersih berstandar SNI.</p></div><button className="inline-flex min-h-9 items-center gap-[7px] rounded-[9px] bg-[#c2dc80] px-[13px] py-2 text-xs text-[#594045] shadow-[0_3px_7px_rgba(75,101,21,0.12)] transition-all hover:-translate-y-px hover:bg-[#b5d36b] hover:shadow-[0_5px_10px_rgba(75,101,21,0.16)] focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-[#4b6515] max-[560px]:ml-auto max-[560px]:min-h-8 max-[560px]:px-2.5 max-[560px]:py-[7px] max-[560px]:text-[10px]" type="button" onClick={() => { setDialogMode({ type: "category" }); setFormError(""); dialogRef.current?.showModal(); }}><i className="fa-solid fa-plus"/> Tambah Kategori Baru</button></div>
           <section className="management-summary category-summary mb-4 grid grid-cols-4 gap-3 max-[980px]:grid-cols-2 max-[560px]:grid-cols-1" aria-label="Ringkasan kategori">
             <article className="summary-card flex min-w-0 items-center justify-between rounded-2xl border border-[#c2dc80]/60 bg-[#edf5d7] p-4 text-[#594045] shadow-sm"><div className="flex min-w-0 flex-col gap-1"><span className="text-[9px] font-bold tracking-wide text-[#4b6515]">TOTAL TOKO</span><strong className="text-xl">{menus.length}</strong><small className="text-[10px] text-[#74666a]">{menus.length} Aktif • bulan ini</small></div><i className="fa-solid fa-store text-lg text-[#4b6515]" /></article>
             <article className="summary-card amber flex min-w-0 items-center justify-between rounded-2xl border border-[#fbbf24]/40 bg-[#fff0c2] p-4 text-[#594045] shadow-sm"><div className="flex min-w-0 flex-col gap-1"><span className="text-[9px] font-bold tracking-wide text-[#4b6515]">TOTAL KATEGORI</span><strong className="text-xl">{categoryNames.length} <small className="text-[10px] font-normal">kategori aktif</small></strong><small className="text-[10px] text-[#74666a]">Zonasi Standar Revitalisasi SNI</small></div><i className="fa-solid fa-shop text-lg text-[#4b6515]" /></article>
@@ -429,8 +449,8 @@ export default function Kategori() {
           {formError && <p className="m-0 text-xs text-red-700" role="alert">{formError}</p>}
           <div className="create-actions flex justify-end gap-2">
             <button className="cancel-button rounded-lg bg-[#f2f1ec] px-4 py-2 text-xs text-[#594045] hover:bg-[#e7e5dc] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4b6515]" type="button" onClick={() => dialogRef.current?.close()}>Batal</button>
-            <button className="add-button rounded-lg bg-[#c2dc80] px-4 py-2 text-xs font-semibold text-[#594045] hover:bg-[#b5d36b] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4b6515]" type="submit">
-              {dialogMode.type === "category" ? "Tambah Kategori Baru" : "Tambah Toko"}
+            <button className="add-button rounded-lg bg-[#c2dc80] px-4 py-2 text-xs font-semibold text-[#594045] hover:bg-[#b5d36b] disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4b6515]" type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Menyimpan..." : dialogMode.type === "category" ? "Tambah Kategori Baru" : "Tambah Toko"}
             </button>
           </div>
         </form>

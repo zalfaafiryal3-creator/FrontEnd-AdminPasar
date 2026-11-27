@@ -1,8 +1,14 @@
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import TambahPedagangBaru, { type PedagangData } from "./TambahPedagangBaru";
 import AdminLayout from "../../../../components/AdminLayout";
-import { getManagedStores } from "../../../../lib/store-api";
-import { initialSellerRecords } from "../../../../lib/admin-records";
+import {
+  createSeller,
+  deleteSeller,
+  getSellers,
+  updateSeller,
+  type ApiSeller,
+} from "../../../../lib/admin-api";
+import { ApiError } from "../../../../lib/api";
 
 
 type FilterDropdownProps = {
@@ -112,26 +118,36 @@ function FilterDropdown({
   );
 }
 
-const STORAGE_KEY = "pasar-admin-sellers";
+type SellerView = {
+  id: string;
+  name: string;
+  shop: string;
+  block: string;
+  status: string;
+  phone: string;
+  email: string;
+  type: string;
+  photoUrl: string | null;
+};
 
-const sellerSeed = initialSellerRecords;
-
-function readSellersFromStorage(): typeof sellerSeed {
-  if (typeof window === "undefined") return sellerSeed;
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
-      }
-    }
-  } catch {}
-  return sellerSeed;
+function toSellerView(seller: ApiSeller): SellerView {
+  return {
+    id: String(seller.id),
+    name: seller.name,
+    shop: seller.shop,
+    block: seller.block,
+    status: seller.status,
+    phone: seller.phone,
+    email: seller.email,
+    type: seller.type,
+    photoUrl: seller.photoUrl,
+  };
 }
 
 export default function Penjual() {
-  const [sellers, setSellers] = useState(() => readSellersFromStorage());
+  const [sellers, setSellers] = useState<SellerView[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const [zoneFilter, setZoneFilter] = useState("");
@@ -140,44 +156,22 @@ export default function Penjual() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPedagang, setEditingPedagang] = useState<PedagangData | null>(null);
 
-  // Sync sellers with stores from backend/MySQL or cache
-  useEffect(() => {
-    getManagedStores()
-      .then((stores) => {
-        if (!Array.isArray(stores) || stores.length === 0) return;
-        setSellers((current) => {
-          const currentShopNames = new Set(current.map((s) => s.shop.trim().toLowerCase()));
-          const newFromStores = stores
-            .filter((store) => !currentShopNames.has(store.name.trim().toLowerCase()))
-            .map((store) => ({
-              id: `store-seller-${store.id}`,
-              name: store.owner && store.owner !== "Belum diisi" ? store.owner : "Pedagang " + store.name,
-              shop: store.name,
-              block: store.zone || "Blok A",
-              status: store.status === "buka" ? "Lapak Buka" : store.status === "tutup" ? "Tutup Sementara" : "Menunggu Verifikasi",
-              phone: store.phone || "-",
-              email: store.email || "-",
-              type: store.category.includes("Sayur") || store.category.includes("Daging") || store.category.includes("Sembako") ? "Zona Bahan Pokok" : "Zona Kuliner",
-            }));
-          if (newFromStores.length === 0) return current;
-          const merged = [...current, ...newFromStores];
-          try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
-          } catch {}
-          return merged;
-        });
-      })
-      .catch(() => {
-        // Server closed: local sellers are already preserved in localStorage!
-      });
+  const loadSellers = useCallback(async () => {
+    setIsLoading(true);
+    setErrorMessage("");
+    try {
+      const data = await getSellers();
+      setSellers(data.map(toSellerView));
+    } catch (error) {
+      setErrorMessage(error instanceof ApiError ? error.message : "Gagal memuat data penjual dari database.");
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  const persistSellers = (updated: typeof sellerSeed) => {
-    setSellers(updated);
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    } catch {}
-  };
+  useEffect(() => {
+    void loadSellers();
+  }, [loadSellers]);
 
   const visibleSellers = useMemo(() => sellers.filter((seller) =>
     `${seller.name} ${seller.shop} ${seller.block}`.toLowerCase().includes(search.toLowerCase())
@@ -199,16 +193,22 @@ export default function Penjual() {
       : [...current, id]);
   };
 
-  const handleDeleteSellers = () => {
+  const handleDeleteSellers = async () => {
     if (!selectedIds.length) return;
-    const updated = sellers.filter((seller) => !selectedIds.includes(seller.id));
-    persistSellers(updated);
-    setSelectedIds([]);
+    if (!window.confirm(`Hapus ${selectedIds.length} penjual yang dipilih dari database?`)) return;
+    setErrorMessage("");
+    try {
+      await Promise.all(selectedIds.map((id) => deleteSeller(Number(id))));
+      setSellers((current) => current.filter((seller) => !selectedIds.includes(seller.id)));
+      setSelectedIds([]);
+    } catch (error) {
+      setErrorMessage(error instanceof ApiError ? error.message : "Gagal menghapus penjual dari database.");
+    }
   };
 
-  const handleSavePedagang = (data: PedagangData) => {
-    const updatedSeller = {
-      id: data.id || `seller-${Date.now()}`,
+  const handleSavePedagang = async (data: PedagangData) => {
+    setErrorMessage("");
+    const payload = {
       name: data.name,
       shop: data.shop,
       block: data.block,
@@ -216,20 +216,43 @@ export default function Penjual() {
       phone: data.phone,
       email: data.email ?? "",
       type: data.type ?? "Zona Kuliner",
+      photoUrl: data.photoUrl ?? null,
     };
-    const isExisting = sellers.some((s) => s.id === updatedSeller.id);
-    const updated = isExisting
-      ? sellers.map((s) => (s.id === updatedSeller.id ? updatedSeller : s))
-      : [updatedSeller, ...sellers];
-    persistSellers(updated);
-    setEditingPedagang(null);
+
+    try {
+      const numericId = Number(data.id);
+      const isExisting = Boolean(data.id) && Number.isSafeInteger(numericId) && sellers.some((s) => s.id === data.id);
+      if (isExisting) {
+        const updated = toSellerView(await updateSeller(numericId, payload));
+        setSellers((current) => current.map((s) => (s.id === updated.id ? updated : s)));
+      } else {
+        const created = toSellerView(await createSeller(payload));
+        setSellers((current) => [created, ...current]);
+      }
+      setEditingPedagang(null);
+    } catch (error) {
+      setErrorMessage(error instanceof ApiError ? error.message : "Gagal menyimpan data penjual ke database.");
+    }
   };
 
-  const handleToggleSellerStatus = () => {
-    const updated = sellers.map((seller) => selectedIds.includes(seller.id)
-      ? { ...seller, status: seller.status === "Lapak Buka" ? "Tutup Sementara" : "Lapak Buka" }
-      : seller);
-    persistSellers(updated);
+  const handleToggleSellerStatus = async () => {
+    if (!selectedIds.length) return;
+    setErrorMessage("");
+    try {
+      const updatedRows = await Promise.all(
+        sellers
+          .filter((seller) => selectedIds.includes(seller.id))
+          .map((seller) =>
+            updateSeller(Number(seller.id), {
+              status: seller.status === "Lapak Buka" ? "Tutup Sementara" : "Lapak Buka",
+            }),
+          ),
+      );
+      const updatedMap = new Map(updatedRows.map((row) => [String(row.id), toSellerView(row)]));
+      setSellers((current) => current.map((seller) => updatedMap.get(seller.id) ?? seller));
+    } catch (error) {
+      setErrorMessage(error instanceof ApiError ? error.message : "Gagal memperbarui status penjual.");
+    }
   };
 
   return (
@@ -290,7 +313,15 @@ export default function Penjual() {
           <button className="grid size-9 cursor-pointer place-items-center rounded-lg border border-[rgba(194,220,128,0.8)] bg-white text-[#4b6515] hover:bg-[#edf5d7] focus-visible:outline-2 focus-visible:outline-[#fbbf24] max-[980px]:hidden" type="button" aria-label="Tampilan kartu"><i className="fa-solid fa-grip" /></button>
         </div>
 
-        {visibleSellers.length > 0 ? (
+        {errorMessage && (
+          <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700" role="alert">
+            {errorMessage}
+          </p>
+        )}
+
+        {isLoading ? (
+          <div className="flex min-h-[120px] items-center justify-center rounded-2xl border border-dashed border-[rgba(75,101,21,0.35)] bg-[rgba(194,220,128,0.12)] p-5 text-[13px] font-semibold text-[#594045]">Memuat data pedagang dari database...</div>
+        ) : visibleSellers.length > 0 ? (
           <div className="grid min-w-0 grid-cols-2 content-start gap-4 px-0 pt-0.5 pb-2 max-[980px]:gap-3 max-[560px]:grid-cols-1 max-[560px]:gap-[10px]">
             {visibleSellers.map((seller) => {
               const selected = selectedIds.includes(seller.id);

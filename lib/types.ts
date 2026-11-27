@@ -9,6 +9,7 @@ export type AuthUser = {
   username: string;
   email: string;
   role: UserRole;
+  phone?: string;
 };
 
 // Bentuk pengguna persis seperti balasan backend
@@ -17,6 +18,7 @@ export type ApiUser = {
   name: string;
   email: string;
   role: UserRole;
+  phone?: string;
 };
 
 // Balasan POST /api/auth/login dan /api/auth/register
