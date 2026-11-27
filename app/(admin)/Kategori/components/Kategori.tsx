@@ -65,6 +65,139 @@ function loadCreatedCategories(): string[] {
   return readStorage<string>("pasar-admin-category-groups");
 }
 
+function CategoryCard({
+  category,
+  entries,
+  selectedIds,
+  toggleSelection,
+  onAddStore,
+}: {
+  category: string;
+  entries: Menu[];
+  selectedIds: Set<string>;
+  toggleSelection: (id: string) => void;
+  onAddStore: () => void;
+}) {
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const ITEMS_PER_PAGE = 5;
+  const slides = useMemo(() => {
+    const list: Menu[][] = [];
+    for (let i = 0; i < entries.length; i += ITEMS_PER_PAGE) {
+      list.push(entries.slice(i, i + ITEMS_PER_PAGE));
+    }
+    return list.length ? list : [[]];
+  }, [entries]);
+
+  const activeSlide = Math.min(currentSlide, Math.max(0, slides.length - 1));
+  const currentEntries = slides[activeSlide] || [];
+
+  return (
+    <section className="flex min-w-0 flex-col" key={category}>
+      <h2 className="relative z-[1] mx-auto -mb-[3px] grid min-h-[30px] w-[min(100%,184px)] place-items-center rounded-xl bg-[#594045] px-2 py-[5px] text-center text-[11px] leading-[1.3] font-bold text-white shadow-sm">
+        <span>{category}</span>
+        <small className="text-[9px] font-medium opacity-80">{entries.length} Toko</small>
+      </h2>
+
+      <div className="flex h-[360px] min-w-0 flex-col rounded-[19px] border border-[rgba(194,220,128,0.82)] bg-[#e3efc2] px-3 pt-[34px] pb-3 shadow-[0_5px_14px_rgba(75,101,21,0.07)] max-[980px]:px-2 max-[760px]:h-auto max-[760px]:px-3 max-[760px]:pt-8 max-[760px]:pb-3">
+        {/* Navigasi Slide Samping jika item lebih dari 5 */}
+        {slides.length > 1 && (
+          <div className="mb-2 flex items-center justify-between rounded-lg bg-white/60 px-2 py-1 text-[9px] font-semibold text-[#4b6515] shadow-xs">
+            <button
+              type="button"
+              disabled={activeSlide === 0}
+              onClick={() => setCurrentSlide((s) => Math.max(0, s - 1))}
+              className="flex h-5 w-5 items-center justify-center rounded bg-white text-[#4b6515] shadow-xs transition hover:bg-[#edf5d7] disabled:cursor-not-allowed disabled:opacity-30"
+              title="Slide sebelumnya"
+              aria-label="Slide sebelumnya"
+            >
+              <i className="fa-solid fa-chevron-left text-[8px]" />
+            </button>
+            <div className="flex items-center gap-1.5">
+              <span>Slide {activeSlide + 1} / {slides.length}</span>
+              <span className="flex gap-1">
+                {slides.map((_, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setCurrentSlide(idx)}
+                    className={`h-1.5 rounded-full transition-all ${
+                      idx === activeSlide ? "w-3 bg-[#4b6515]" : "w-1.5 bg-[#4b6515]/35 hover:bg-[#4b6515]/60"
+                    }`}
+                    title={`Ke slide ${idx + 1}`}
+                    aria-label={`Ke slide ${idx + 1}`}
+                  />
+                ))}
+              </span>
+            </div>
+            <button
+              type="button"
+              disabled={activeSlide === slides.length - 1}
+              onClick={() => setCurrentSlide((s) => Math.min(slides.length - 1, s + 1))}
+              className="flex h-5 w-5 items-center justify-center rounded bg-white text-[#4b6515] shadow-xs transition hover:bg-[#edf5d7] disabled:cursor-not-allowed disabled:opacity-30"
+              title="Slide berikutnya"
+              aria-label="Slide berikutnya"
+            >
+              <i className="fa-solid fa-chevron-right text-[8px]" />
+            </button>
+          </div>
+        )}
+
+        {/* Daftar toko per slide (5 toko) */}
+        <div className="flex-1 overflow-hidden">
+          {currentEntries.map((menu) => (
+            <div
+              className={`mb-[9px] flex min-w-0 cursor-pointer items-center gap-2 rounded-[9px] p-1 text-[#594045] transition-colors duration-[140ms] hover:bg-[rgba(255,255,255,0.4)] focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-[#4b6515] max-[980px]:gap-[6px] max-[980px]:p-[3px] max-[760px]:mb-[8px] max-[760px]:gap-2 max-[760px]:p-1 ${
+                selectedIds.has(menu.id) ? "bg-[rgba(251,191,36,0.23)] shadow-[inset_0_0_0_1px_rgba(75,101,21,0.2)]" : ""
+              }`}
+              data-menu-id={menu.id}
+              key={menu.id}
+              role="button"
+              tabIndex={0}
+              aria-pressed={selectedIds.has(menu.id)}
+              onClick={() => toggleSelection(menu.id)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  toggleSelection(menu.id);
+                }
+              }}
+            >
+              <span
+                className={`grid h-[31px] w-[31px] shrink-0 place-items-center rounded-[10px] bg-[#fbbf24] text-sm text-[#4b6515] shadow-[0_2px_4px_rgba(75,101,21,0.13)] max-[980px]:h-7 max-[980px]:w-7 max-[980px]:text-xs max-[760px]:h-[31px] max-[760px]:w-[31px] max-[760px]:text-sm ${
+                  menu.leaf ? "bg-[#c2dc80]" : ""
+                }`}
+              >
+                {menu.icon}
+              </span>
+              <span className="min-w-0 flex-1">
+                <strong className="mb-0.5 block truncate text-[10px] leading-[1.35] text-[#594045] max-[980px]:text-[9px] max-[760px]:text-[10px]">
+                  {menu.item}
+                </strong>
+                <small className="block truncate text-[8px] leading-[1.4] text-[#74666a] max-[980px]:text-[7px] max-[760px]:text-[8px]">
+                  • {menu.details}
+                </small>
+              </span>
+            </div>
+          ))}
+          {!currentEntries.length && (
+            <p className="my-auto py-8 text-center text-[9px] text-[#74666a]">
+              Belum ada toko di kategori ini.
+            </p>
+          )}
+        </div>
+
+        <button
+          className="category-add-item mt-auto inline-flex min-h-8 w-full items-center justify-center gap-2 rounded-lg border border-dashed border-[#4b6515]/35 bg-white/50 text-[10px] font-semibold text-[#4b6515] hover:bg-white transition"
+          type="button"
+          onClick={onAddStore}
+        >
+          <i className="fa-solid fa-plus" /> Tambah Toko
+        </button>
+      </div>
+    </section>
+  );
+}
+
 export default function Kategori() {
   const [menus, setMenus] = useState(loadMenus);
   const [createdCategories, setCreatedCategories] = useState(loadCreatedCategories);
@@ -248,23 +381,18 @@ export default function Kategori() {
           </div>
           <div className="grid min-w-0 grid-cols-4 items-stretch gap-[10px] py-[14px] pb-2 max-[980px]:gap-2 max-[760px]:grid-cols-2 max-[760px]:gap-3">
             {Object.entries(groupedMenus).map(([category, entries]) => (
-              <section className="min-w-0" key={category}>
-                <h2 className="relative z-[1] mx-auto -mb-[3px] grid min-h-[30px] w-[min(100%,184px)] place-items-center rounded-xl bg-[#594045] px-2 py-[5px] text-center text-[11px] leading-[1.3] font-bold text-white"><span>{category}</span><small className="text-[9px] font-medium opacity-80">{entries.length} Toko</small></h2>
-                <div className="min-h-[330px] min-w-0 rounded-[19px] border border-[rgba(194,220,128,0.82)] bg-[#e3efc2] px-3 pt-[42px] pb-4 shadow-[0_5px_14px_rgba(75,101,21,0.07)] max-[980px]:px-2 max-[760px]:min-h-[235px] max-[760px]:px-3 max-[760px]:pt-9 max-[760px]:pb-[14px]">
-                  {entries.map((menu) => (
-                    <div className={`mb-[13px] flex min-w-0 cursor-pointer items-center gap-2 rounded-[9px] p-1 text-[#594045] transition-colors duration-[140ms] hover:bg-[rgba(255,255,255,0.4)] focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-[#4b6515] max-[980px]:gap-[6px] max-[980px]:p-[3px] max-[760px]:mb-[10px] max-[760px]:gap-2 max-[760px]:p-1 ${selectedIds.has(menu.id) ? "bg-[rgba(251,191,36,0.23)] shadow-[inset_0_0_0_1px_rgba(75,101,21,0.2)]" : ""}`} data-menu-id={menu.id} key={menu.id} role="button" tabIndex={0} aria-pressed={selectedIds.has(menu.id)} onClick={() => toggleSelection(menu.id)} onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        toggleSelection(menu.id);
-                      }
-                    }}>
-                      <span className={`grid h-[31px] w-[31px] shrink-0 place-items-center rounded-[10px] bg-[#fbbf24] text-sm text-[#4b6515] shadow-[0_2px_4px_rgba(75,101,21,0.13)] max-[980px]:h-7 max-[980px]:w-7 max-[980px]:text-xs max-[760px]:h-[31px] max-[760px]:w-[31px] max-[760px]:text-sm ${menu.leaf ? "bg-[#c2dc80]" : ""}`}>{menu.icon}</span><span><strong className="mb-0.5 block break-words text-[10px] leading-[1.35] text-[#594045] max-[980px]:text-[9px] max-[760px]:text-[10px]">{menu.item}</strong><small className="block break-words text-[8px] leading-[1.4] text-[#74666a] max-[980px]:text-[7px] max-[760px]:text-[8px]">? {menu.details}</small></span>
-                    </div>
-                  ))}
-                  {!entries.length && <p className="mb-3 text-center text-[9px] text-[#74666a]">Belum ada toko di kategori ini.</p>}
-                  <button className="category-add-item mt-1 inline-flex min-h-8 w-full items-center justify-center gap-2 rounded-lg border border-dashed border-[#4b6515]/35 bg-white/50 text-[10px] font-semibold text-[#4b6515] hover:bg-white" type="button" onClick={() => { setDialogMode({ type: "store", category }); setFormError(""); dialogRef.current?.showModal(); }}><i className="fa-solid fa-plus" /> Tambah Toko</button>
-                </div>
-              </section>
+              <CategoryCard
+                key={category}
+                category={category}
+                entries={entries}
+                selectedIds={selectedIds}
+                toggleSelection={toggleSelection}
+                onAddStore={() => {
+                  setDialogMode({ type: "store", category });
+                  setFormError("");
+                  dialogRef.current?.showModal();
+                }}
+              />
             ))}
             {!Object.keys(groupedMenus).length && <p className="col-span-full p-[18px] text-center text-[11px] text-[#74666a]">Kategori tidak ditemukan.</p>}
           </div>

@@ -1,36 +1,29 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Admin Pasar Oro-Oro Dowo
 
-## Getting Started
+## Menjalankan secara lokal
 
-First, run the development server:
+Persyaratan: Node.js 22.13 atau lebih baru dan backend sudah berjalan di
+`http://localhost:4000`.
 
-```bash
+```powershell
+npm install
+if (-not (Test-Path .env.local)) { Copy-Item .env.example .env.local }
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Buka http://localhost:3000. Untuk build production lokal, jalankan
+`npm run build`, lalu `npm start`. Jangan jalankan `npm run build` bersamaan
+dengan server `npm start`/`npm run dev`; hentikan server lama terlebih dahulu.
+Untuk kembali ke mode development, hentikan `npm start` lalu jalankan
+`npm run dev`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+`NEXT_PUBLIC_API_URL` pada `.env.local` harus menunjuk ke alamat backend.
+Jika backend ada di komputer lain, gunakan alamat IP komputer backend, misalnya
+`http://192.168.1.20:4000`, lalu tambahkan origin frontend ke `CORS_ORIGIN`
+di `.env` backend. Restart server frontend setelah mengubah file environment.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Login admin menggunakan email dan kata sandi dari backend; halaman login yang
+aktif adalah `/login`. Proyek ini tidak mengimplementasikan login Google.
+Jika tampilan masih menunjukkan tombol Google atau perubahan lama, berarti
+server sedang melayani build sebelumnya. Hentikan server, jalankan ulang
+`npm run build`, lalu `npm start` (atau gunakan `npm run dev` untuk development).

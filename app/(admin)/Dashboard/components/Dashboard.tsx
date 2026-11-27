@@ -3,7 +3,6 @@ import AdminLayout from "../../../../components/AdminLayout";
 import Peringkat from "./peringkat";
 import PromoAktif from "./PromoAktif";
 import { StatCards, CapacityPanel } from "./RingkasanAktifitas";
-import RiwayatAktivitas from "./RiwayatAktifitas";
 
 export default function Dashboard() {
   const { currentUser } = useAuth();
@@ -39,15 +38,14 @@ export default function Dashboard() {
 
         <StatCards />
 
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.7fr)_minmax(330px,1.3fr)] xl:grid-cols-[minmax(0,1.8fr)_minmax(380px,1.2fr)] gap-5 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
           <div className="flex flex-col gap-5 min-w-0">
             <Peringkat />
-            <PromoAktif />
           </div>
 
           <div className="flex flex-col gap-5 min-w-0">
-            <RiwayatAktivitas />
             <CapacityPanel />
+            <PromoAktif />
           </div>
         </div>
       </main>

@@ -68,7 +68,6 @@ export default function Login() {
             alt="Logo Pasar Oro-Oro Dowo"
             width={200}
             height={200}
-            quality={100}
             className="h-[52px] w-[52px] rounded-2xl object-contain"
           />
           <div className="text-white">
@@ -132,7 +131,6 @@ export default function Login() {
               alt="Logo Pasar Oro-Oro Dowo"
               width={200}
               height={200}
-              quality={100}
               className="h-[52px] w-[52px] rounded-2xl object-contain"
             />
             <div>
