@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import Link from "next/link";
 import AdminLayout from "../../../../components/AdminLayout";
 import { createCategory } from "../../../../lib/admin-api";
 import { ApiError } from "../../../../lib/api";
 import {
-  createStore,
-  deleteStore,
   getManagedStores,
   getStoreCategories,
   type Store,
@@ -52,15 +51,9 @@ function storeToMenu(store: Store): Menu {
 function CategoryCard({
   category,
   entries,
-  selectedIds,
-  toggleSelection,
-  onAddStore,
 }: {
   category: string;
   entries: Menu[];
-  selectedIds: Set<string>;
-  toggleSelection: (id: string) => void;
-  onAddStore: () => void;
 }) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const ITEMS_PER_PAGE = 5;
@@ -130,21 +123,9 @@ function CategoryCard({
         <div className="flex-1 overflow-hidden">
           {currentEntries.map((menu) => (
             <div
-              className={`mb-[9px] flex min-w-0 cursor-pointer items-center gap-2 rounded-[9px] p-1 text-[#594045] transition-colors duration-[140ms] hover:bg-[rgba(255,255,255,0.4)] focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-[#4b6515] max-[980px]:gap-[6px] max-[980px]:p-[3px] max-[760px]:mb-[8px] max-[760px]:gap-2 max-[760px]:p-1 ${
-                selectedIds.has(menu.id) ? "bg-[rgba(251,191,36,0.23)] shadow-[inset_0_0_0_1px_rgba(75,101,21,0.2)]" : ""
-              }`}
+              className="mb-[9px] flex min-w-0 items-center gap-2 rounded-[9px] p-1 text-[#594045] transition-colors duration-[140ms] hover:bg-[rgba(255,255,255,0.4)] max-[980px]:gap-[6px] max-[980px]:p-[3px] max-[760px]:mb-[8px] max-[760px]:gap-2 max-[760px]:p-1"
               data-menu-id={menu.id}
               key={menu.id}
-              role="button"
-              tabIndex={0}
-              aria-pressed={selectedIds.has(menu.id)}
-              onClick={() => toggleSelection(menu.id)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  toggleSelection(menu.id);
-                }
-              }}
             >
               <span
                 className={`grid h-[31px] w-[31px] shrink-0 place-items-center rounded-[10px] bg-[#fbbf24] text-sm text-[#4b6515] shadow-[0_2px_4px_rgba(75,101,21,0.13)] max-[980px]:h-7 max-[980px]:w-7 max-[980px]:text-xs max-[760px]:h-[31px] max-[760px]:w-[31px] max-[760px]:text-sm ${
@@ -169,14 +150,6 @@ function CategoryCard({
             </p>
           )}
         </div>
-
-        <button
-          className="category-add-item mt-auto inline-flex min-h-8 w-full items-center justify-center gap-2 rounded-lg border border-dashed border-[#4b6515]/35 bg-white/50 text-[10px] font-semibold text-[#4b6515] hover:bg-white transition"
-          type="button"
-          onClick={onAddStore}
-        >
-          <i className="fa-solid fa-plus" /> Tambah Toko
-        </button>
       </div>
     </section>
   );
@@ -190,11 +163,9 @@ export default function Kategori() {
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("Semua Kategori");
   const [sortOption, setSortOption] = useState("Urutkan: Toko Terbanyak");
-  const [dialogMode, setDialogMode] = useState<{ type: "category" } | { type: "store"; category: string }>({ type: "category" });
   const [formError, setFormError] = useState("");
   const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const dialogRef = useRef<HTMLDialogElement>(null);
   const categoryMenuRef = useRef<HTMLDivElement>(null);
   const sortMenuRef = useRef<HTMLDivElement>(null);
@@ -258,84 +229,40 @@ export default function Kategori() {
     return groups;
   }, {});
 
-  async function addMenu(event: FormEvent<HTMLFormElement>) {
+  const sortedCategoryEntries = useMemo(() => {
+    const entries = Object.entries(groupedMenus);
+    if (sortOption === "Urutkan: A-Z") {
+      return entries.sort((a, b) => a[0].localeCompare(b[0], "id"));
+    }
+    return entries.sort((a, b) => b[1].length - a[1].length);
+  }, [groupedMenus, sortOption]);
+
+  async function addCategory(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
     const formData = new FormData(form);
-    const category = dialogMode.type === "store"
-      ? dialogMode.category
-      : String(formData.get("category") || "").trim();
-    const item = String(formData.get("item") || "").trim();
+    const category = String(formData.get("category") || "").trim();
     setFormError("");
 
     if (!category) {
       setFormError("Nama kategori wajib diisi.");
       return;
     }
-    if (dialogMode.type === "category" && categoryNames.some((name) => name.toLocaleLowerCase("id") === category.toLocaleLowerCase("id"))) {
+    if (categoryNames.some((name) => name.toLocaleLowerCase("id") === category.toLocaleLowerCase("id"))) {
       setFormError(`Kategori "${category}" sudah tersedia.`);
-      return;
-    }
-    if (dialogMode.type === "store" && !item) {
-      setFormError("Nama toko wajib diisi.");
       return;
     }
 
     setIsSubmitting(true);
     try {
-      if (dialogMode.type === "category") {
-        const created = await createCategory(category);
-        setCategories((current) => [...current, created]);
-      }
-
-      if (dialogMode.type === "store" && item) {
-        const matchedCategory = categories.find(
-          (cat) => cat.name.trim().toLocaleLowerCase("id") === category.toLocaleLowerCase("id"),
-        );
-        if (!matchedCategory) {
-          setFormError(`Kategori "${category}" tidak ditemukan di database.`);
-          setIsSubmitting(false);
-          return;
-        }
-        const details = String(formData.get("details") || "").trim() || category;
-        const createdStore = await createStore({
-          name: item,
-          categoryId: matchedCategory.id,
-          description: details,
-          status: "buka",
-          openTime: "06:00",
-          closeTime: "17:00",
-        });
-        setMenus((current) => [...current, storeToMenu(createdStore)]);
-      }
-
+      const created = await createCategory(category);
+      setCategories((current) => [...current, created]);
       form.reset();
       dialogRef.current?.close();
     } catch (error) {
-      setFormError(error instanceof ApiError ? error.message : "Gagal menyimpan ke database.");
+      setFormError(error instanceof ApiError ? error.message : "Gagal menyimpan kategori ke database.");
     } finally {
       setIsSubmitting(false);
-    }
-  }
-
-  function toggleSelection(id: string) {
-    setSelectedIds((current) => {
-      const updated = new Set(current);
-      if (updated.has(id)) updated.delete(id);
-      else updated.add(id);
-      return updated;
-    });
-  }
-
-  async function deleteSelected() {
-    if (!selectedIds.size || !window.confirm(`Hapus ${selectedIds.size} toko yang dipilih dari database?`)) return;
-
-    try {
-      await Promise.all([...selectedIds].map((id) => deleteStore(Number(id))));
-      setMenus((current) => current.filter((menu) => !selectedIds.has(menu.id)));
-      setSelectedIds(new Set());
-    } catch (error) {
-      window.alert(error instanceof ApiError ? error.message : "Gagal menghapus toko dari database.");
     }
   }
 
@@ -343,7 +270,7 @@ export default function Kategori() {
     <AdminLayout activePage="categories" label="Admin Kategori">
         <main className="page-view active management-view category-management flex min-h-[calc(100vh-58px)] flex-col px-6 py-[17px] pb-[18px] text-[#594045] max-[760px]:px-4 max-[560px]:px-3 max-[390px]:px-2.5">
           <div className="mb-2 text-[9px] font-semibold tracking-[0.12em] text-[#74666a]">ADMIN PANEL &nbsp;›&nbsp; KATEGORISASI</div>
-          <div className="mb-4 flex flex-wrap items-start justify-between gap-4 [&_h1]:mb-1 [&_h1]:text-[21px] [&_h1]:font-bold [&_h1]:leading-[1.3] [&_h1]:text-[#594045] [&_p]:text-xs [&_p]:leading-relaxed [&_p]:text-[#74666a] max-[760px]:[&_h1]:text-[19px] max-[560px]:[&_h1]:text-[17px] max-[560px]:gap-2"><div><h1>Kelola Kategori Toko Pasar Oro-Oro Dowo</h1><p>Kelola klasifikasi struktur kategori, dan penataan lapak pedagang di kawasan Pasar Oro-Oro Dowo Malang demi penataan pasar tradisional bersih berstandar SNI.</p></div><button className="inline-flex min-h-9 items-center gap-[7px] rounded-[9px] bg-[#c2dc80] px-[13px] py-2 text-xs text-[#594045] shadow-[0_3px_7px_rgba(75,101,21,0.12)] transition-all hover:-translate-y-px hover:bg-[#b5d36b] hover:shadow-[0_5px_10px_rgba(75,101,21,0.16)] focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-[#4b6515] max-[560px]:ml-auto max-[560px]:min-h-8 max-[560px]:px-2.5 max-[560px]:py-[7px] max-[560px]:text-[10px]" type="button" onClick={() => { setDialogMode({ type: "category" }); setFormError(""); dialogRef.current?.showModal(); }}><i className="fa-solid fa-plus"/> Tambah Kategori Baru</button></div>
+          <div className="mb-4 flex flex-wrap items-start justify-between gap-4 [&_h1]:mb-1 [&_h1]:text-[21px] [&_h1]:font-bold [&_h1]:leading-[1.3] [&_h1]:text-[#594045] [&_p]:text-xs [&_p]:leading-relaxed [&_p]:text-[#74666a] max-[760px]:[&_h1]:text-[19px] max-[560px]:[&_h1]:text-[17px] max-[560px]:gap-2"><div><h1>Kelola Kategori Toko Pasar Oro-Oro Dowo</h1><p>Kelola klasifikasi struktur kategori, dan penataan lapak pedagang di kawasan Pasar Oro-Oro Dowo Malang demi penataan pasar tradisional bersih berstandar SNI.</p></div><button className="inline-flex min-h-9 items-center gap-[7px] rounded-[9px] bg-[#c2dc80] px-[13px] py-2 text-xs text-[#594045] shadow-[0_3px_7px_rgba(75,101,21,0.12)] transition-all hover:-translate-y-px hover:bg-[#b5d36b] hover:shadow-[0_5px_10px_rgba(75,101,21,0.16)] focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-[#4b6515] max-[560px]:ml-auto max-[560px]:min-h-8 max-[560px]:px-2.5 max-[560px]:py-[7px] max-[560px]:text-[10px]" type="button" onClick={() => { setFormError(""); dialogRef.current?.showModal(); }}><i className="fa-solid fa-plus"/> Tambah Kategori Baru</button></div>
           <section className="management-summary category-summary mb-4 grid grid-cols-4 gap-3 max-[980px]:grid-cols-2 max-[560px]:grid-cols-1" aria-label="Ringkasan kategori">
             <article className="summary-card flex min-w-0 items-center justify-between rounded-2xl border border-[#c2dc80]/60 bg-[#edf5d7] p-4 text-[#594045] shadow-sm"><div className="flex min-w-0 flex-col gap-1"><span className="text-[9px] font-bold tracking-wide text-[#4b6515]">TOTAL TOKO</span><strong className="text-xl">{menus.length}</strong><small className="text-[10px] text-[#74666a]">{menus.length} Aktif • bulan ini</small></div><i className="fa-solid fa-store text-lg text-[#4b6515]" /></article>
             <article className="summary-card amber flex min-w-0 items-center justify-between rounded-2xl border border-[#fbbf24]/40 bg-[#fff0c2] p-4 text-[#594045] shadow-sm"><div className="flex min-w-0 flex-col gap-1"><span className="text-[9px] font-bold tracking-wide text-[#4b6515]">TOTAL KATEGORI</span><strong className="text-xl">{categoryNames.length} <small className="text-[10px] font-normal">kategori aktif</small></strong><small className="text-[10px] text-[#74666a]">Zonasi Standar Revitalisasi SNI</small></div><i className="fa-solid fa-shop text-lg text-[#4b6515]" /></article>
@@ -400,57 +327,43 @@ export default function Kategori() {
             <button className="category-tool-button inline-flex min-h-9 items-center gap-2 rounded-lg border border-[#c2dc80]/70 bg-white px-3 text-[10px] font-semibold text-[#4b6515] hover:bg-[#edf5d7]" type="button"><i className="fa-solid fa-table" /> Tabel Detail</button>
           </div>
           <div className="grid min-w-0 grid-cols-4 items-stretch gap-[10px] py-[14px] pb-2 max-[980px]:gap-2 max-[760px]:grid-cols-2 max-[760px]:gap-3">
-            {Object.entries(groupedMenus).map(([category, entries]) => (
+            {isLoading && !sortedCategoryEntries.length ? (
+              <p className="col-span-full p-[18px] text-center text-[11px] text-[#74666a]">Memuat kategori dan daftar toko dari database...</p>
+            ) : sortedCategoryEntries.map(([category, entries]) => (
               <CategoryCard
                 key={category}
                 category={category}
                 entries={entries}
-                selectedIds={selectedIds}
-                toggleSelection={toggleSelection}
-                onAddStore={() => {
-                  setDialogMode({ type: "store", category });
-                  setFormError("");
-                  dialogRef.current?.showModal();
-                }}
               />
             ))}
-            {!Object.keys(groupedMenus).length && <p className="col-span-full p-[18px] text-center text-[11px] text-[#74666a]">Kategori tidak ditemukan.</p>}
+            {!isLoading && !sortedCategoryEntries.length && <p className="col-span-full p-[18px] text-center text-[11px] text-[#74666a]">Kategori tidak ditemukan.</p>}
           </div>
-          <div className="mt-auto flex flex-wrap items-center justify-end gap-3 py-3 pb-0.5 max-[560px]:gap-2"><span className="text-[11px] text-[#74666a]" aria-live="polite">{selectedIds.size ? `${selectedIds.size} dipilih` : ""}</span><span className="category-standard hidden items-center gap-2 text-[9px] text-[#74666a] xl:inline-flex"><i className="fa-solid fa-shield-halved text-[#4b6515]" /> Standardisasi Tata Ruang Zonasi Pasar Oro-Oro Dowo</span><button className="category-save-button inline-flex min-h-9 items-center gap-2 rounded-lg border border-[#c2dc80] bg-white px-3 text-[10px] font-semibold text-[#4b6515] hover:bg-[#edf5d7]" type="button"><i className="fa-solid fa-download" /> Simpan Struktur Urutan</button><button className="inline-flex min-h-9 min-w-[120px] items-center justify-center gap-2 rounded-md border-0 bg-[#c2dc80] px-3 py-[7px] text-xs font-semibold text-[#594045] shadow-[0_3px_7px_rgba(75,101,21,0.12)] transition-all hover:bg-[#b5d36b] hover:shadow-[0_5px_10px_rgba(75,101,21,0.16)] focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-[#4b6515] disabled:cursor-not-allowed disabled:bg-[#e7edda] disabled:text-[#74666a]" type="button" disabled={!selectedIds.size} onClick={deleteSelected}><i className="fa-solid fa-trash-can"/> Hapus Toko</button></div>
+          <div className="mt-auto flex flex-wrap items-center justify-end gap-3 py-3 pb-0.5 max-[560px]:gap-2">
+            <span className="category-standard hidden items-center gap-2 text-[9px] text-[#74666a] xl:inline-flex">
+              <i className="fa-solid fa-shield-halved text-[#4b6515]" /> Daftar toko tersinkronisasi otomatis dengan halaman Kelola Toko
+            </span>
+            <Link
+              href="/kelola-toko"
+              className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-[#c2dc80] bg-white px-3 text-[10px] font-semibold text-[#4b6515] hover:bg-[#edf5d7]"
+            >
+              <i className="fa-solid fa-store" /> Kelola Toko
+            </Link>
+          </div>
         </main>
       <dialog className="m-auto max-h-[90vh] max-w-[min(92vw,420px)] rounded-2xl border border-[rgba(194,220,128,0.7)] bg-white text-[#594045] shadow-2xl backdrop:bg-black/40" ref={dialogRef}>
-        <form className="create-form w-[min(92vw,420px)] space-y-4 p-6" onSubmit={addMenu}>
-          <h2 className="text-lg font-bold text-[#594045]">
-            {dialogMode.type === "category" ? "Tambah Kategori Baru" : `Tambah Toko ke Kategori ${dialogMode.category}`}
-          </h2>
+        <form className="create-form w-[min(92vw,420px)] space-y-4 p-6" onSubmit={addCategory}>
+          <h2 className="text-lg font-bold text-[#594045]">Tambah Kategori Baru</h2>
           <div className="create-fields grid gap-3 [&_input]:rounded-lg [&_input]:border [&_input]:border-[rgba(194,220,128,0.75)] [&_input]:p-2 [&_input]:text-[#594045] [&_input:focus]:border-[#4b6515] [&_input:focus]:outline-2 [&_input:focus]:outline-[rgba(194,220,128,0.45)]">
-            {dialogMode.type === "category" ? (
-              <label className="grid gap-1 text-xs font-semibold">
-                Nama Kategori Baru
-                <input className="rounded-lg border border-[rgba(194,220,128,0.75)] p-2 text-[#594045] focus:border-[#4b6515] focus:outline-2 focus:outline-[rgba(194,220,128,0.45)]" name="category" placeholder="Contoh: Aneka Minuman / Bumbu Dapur" required />
-              </label>
-            ) : (
-              <>
-                <p className="m-0 rounded-lg bg-[#f2f7e4] p-3 text-xs">
-                  Kategori: <strong>{dialogMode.category}</strong>
-                  <span className="block mt-0.5 text-[11px] text-[#4b6515]">Toko akan langsung dimasukkan ke dalam kolom kategori {dialogMode.category}.</span>
-                </p>
-                <label className="grid gap-1 text-xs font-semibold">
-                  Nama Toko / Dagangan
-                  <input className="rounded-lg border border-[rgba(194,220,128,0.75)] p-2 text-[#594045] focus:border-[#4b6515] focus:outline-2 focus:outline-[rgba(194,220,128,0.45)]" name="item" placeholder="Contoh: Toko Barokah Bu Siti" required />
-                </label>
-                <label className="grid gap-1 text-xs font-semibold">
-                  Deskripsi / Komoditas Produk
-                  <input className="rounded-lg border border-[rgba(194,220,128,0.75)] p-2 text-[#594045] focus:border-[#4b6515] focus:outline-2 focus:outline-[rgba(194,220,128,0.45)]" name="details" placeholder="Contoh: Sembako • Minyak • Beras" />
-                </label>
-              </>
-            )}
+            <label className="grid gap-1 text-xs font-semibold">
+              Nama Kategori Baru
+              <input className="rounded-lg border border-[rgba(194,220,128,0.75)] p-2 text-[#594045] focus:border-[#4b6515] focus:outline-2 focus:outline-[rgba(194,220,128,0.45)]" name="category" placeholder="Contoh: Aneka Minuman / Bumbu Dapur" required />
+            </label>
           </div>
           {formError && <p className="m-0 text-xs text-red-700" role="alert">{formError}</p>}
           <div className="create-actions flex justify-end gap-2">
             <button className="cancel-button rounded-lg bg-[#f2f1ec] px-4 py-2 text-xs text-[#594045] hover:bg-[#e7e5dc] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4b6515]" type="button" onClick={() => dialogRef.current?.close()}>Batal</button>
             <button className="add-button rounded-lg bg-[#c2dc80] px-4 py-2 text-xs font-semibold text-[#594045] hover:bg-[#b5d36b] disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4b6515]" type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Menyimpan..." : dialogMode.type === "category" ? "Tambah Kategori Baru" : "Tambah Toko"}
+              {isSubmitting ? "Menyimpan..." : "Tambah Kategori Baru"}
             </button>
           </div>
         </form>

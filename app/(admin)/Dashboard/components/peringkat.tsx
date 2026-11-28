@@ -100,19 +100,19 @@ export default function Peringkat() {
   }, [stores, sellers]);
 
   return (
-    <section className="min-w-0 rounded-2xl border border-[rgba(194,220,128,0.65)] bg-white p-5 shadow-sm">
+    <section className="min-w-0 rounded-xl bg-white p-5 shadow-xs">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-3">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#e8f2cf] text-sm text-[#4f681b]">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[#C2DC80]/50 text-sm text-[#4B6515]">
             <i className="fa-solid fa-trophy" />
           </span>
           <div className="min-w-0">
-            <h2 className="m-0 text-base font-bold leading-tight text-[#202820]">Peringkat Teratas Penjual</h2>
-            <p className="mt-0.5 mb-0 text-xs leading-normal text-[#6c7569]">Evaluasi performa penjualan dan keaktifan lapak pasar</p>
+            <h2 className="m-0 text-sm font-semibold leading-tight text-[#181D1A]">Peringkat Teratas Penjual</h2>
+            <p className="mt-0.5 mb-0 text-xs leading-normal text-[#414941]">Evaluasi performa penjualan dan keaktifan lapak pasar</p>
           </div>
         </div>
-        <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#e8f2cf] px-3 py-1.5 text-xs font-semibold text-[#4b5e2c]">
-          Minggu Ini <i className="fa-solid fa-chevron-down text-[10px]" />
+        <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#C2DC80]/40 px-3 py-1.5 text-xs font-semibold text-[#181D1A]">
+          Minggu Ini <i className="fa-solid fa-chevron-down text-[10px] text-[#414941]" />
         </span>
       </div>
 
@@ -120,42 +120,57 @@ export default function Peringkat() {
       <div className="mt-4 flex flex-col gap-3">
         {rankedItems.map((item, index) => (
           <article
-            className="relative flex items-center gap-3.5 rounded-xl border border-[#e5edd4] bg-[#f7faef] p-3.5 transition-colors hover:bg-[#edf5d7]"
+            className="relative flex flex-col gap-2.5 rounded-xl bg-[#C2DC80]/20 p-3.5 transition-colors hover:bg-[#C2DC80]/30"
             key={item.id}
           >
-            <span className="absolute -top-1.5 -left-1.5 grid h-5 w-5 place-items-center rounded-full bg-[#315d37] text-[11px] font-bold text-white shadow-sm">
-              {index + 1}
-            </span>
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[rgba(68,87,43,0.15)] bg-[linear-gradient(145deg,#8aa265,#d1b28b)] text-base text-white">
-              <i className="fa-solid fa-store" />
-            </span>
-
-            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="min-w-0 flex-1">
-                  <strong className="block truncate text-sm font-semibold leading-snug text-[#242b22]">{item.shop}</strong>
-                  <span className="block truncate text-xs text-[#73796b]">{item.handle} • {item.block}</span>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="relative shrink-0">
+                  <span className="grid h-10 w-10 place-items-center rounded-full bg-[#DFE4DF] text-sm text-[#4B6515]">
+                    <i className="fa-solid fa-store" />
+                  </span>
+                  <span
+                    className={`absolute -bottom-1 -left-1 grid h-5 w-5 place-items-center rounded-full text-[11px] font-semibold ${
+                      index === 0 ? "bg-[#204E2B] text-white" : "bg-[#DFE4DF] text-[#181D1A]"
+                    }`}
+                  >
+                    {index + 1}
+                  </span>
                 </div>
-                <div className="flex shrink-0 items-center gap-2 text-right text-xs text-[#313a2b]">
-                  <span className="text-xs text-[#62695b]">{item.transactions} transaksi</span>
-                  <strong className="text-xs font-bold text-[#385d28]">Skor {item.score}%</strong>
+                <div className="min-w-0">
+                  <strong className="block truncate text-sm font-semibold leading-snug text-[#181D1A]">{item.shop}</strong>
+                  <span className="block truncate text-xs text-[#414941]">{item.handle} • {item.block}</span>
                 </div>
               </div>
-
-              <div className="h-2 w-full overflow-hidden rounded-full bg-[#e5e9dc]">
-                <div className="h-full rounded-full bg-[#ffbd1b] transition-all" style={{ width: `${item.score}%` }} />
+              <div className="flex shrink-0 items-center gap-5 text-right">
+                <div>
+                  <span className="block text-[10px] font-semibold text-[#414941]">Penjualan</span>
+                  <strong className="text-sm font-semibold text-[#181D1A]">{item.transactions}</strong>{" "}
+                  <span className="text-[11px] text-[#414941]">transaksi</span>
+                </div>
+                <div>
+                  <span className="block text-[10px] font-semibold text-[#204E2B]">Skor Kinerja</span>
+                  <strong className="text-sm font-bold text-[#204E2B]">{item.score}%</strong>
+                </div>
               </div>
+            </div>
+
+            <div className="h-2 w-full overflow-hidden rounded-full bg-[#EBEFEA]">
+              <div
+                className={`h-full rounded-full transition-all ${index === 1 ? "bg-[#F59E0B]" : "bg-[#FBBF24]"}`}
+                style={{ width: `${item.score}%` }}
+              />
             </div>
           </article>
         ))}
-        {!rankedItems.length && !dataError && <p className="rounded-lg bg-[#f7faef] p-4 text-center text-xs text-[#62695b]">Belum ada data penjual.</p>}
+        {!rankedItems.length && !dataError && <p className="rounded-lg bg-[#C2DC80]/20 p-4 text-center text-xs text-[#414941]">Belum ada data penjual.</p>}
       </div>
 
       <Link
-        className="mt-4 flex min-h-10 items-center justify-center gap-2 rounded-xl bg-[#ffb916] px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-[#f0a900] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#668c2e]"
+        className="mt-4 flex min-h-9 items-center justify-center gap-2 rounded-lg bg-[#FBBF24] px-4 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-[#f59e0b] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4B6515]"
         href="/penjual"
       >
-        Lihat Semua Penjual <i className="fa-solid fa-arrow-right" />
+        Lihat Semua Penjual <i className="fa-solid fa-arrow-right text-[11px]" />
       </Link>
     </section>
   );
